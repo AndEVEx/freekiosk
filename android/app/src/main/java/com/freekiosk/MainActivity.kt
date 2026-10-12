@@ -120,6 +120,7 @@ class MainActivity : ReactActivity() {
       "allow_system_info" to "@kiosk_allow_system_info",
       "block_factory_reset" to "@kiosk_block_factory_reset",
       "allow_hardware_screenshot" to "@kiosk_allow_hardware_screenshot",
+      "allow_usb_debug_dialog" to "@kiosk_allow_usb_debug_dialog",
       "url_rotation_enabled" to "@kiosk_url_rotation_enabled",
       "url_rotation_list" to "@kiosk_url_rotation_list",
       "url_rotation_interval" to "@kiosk_url_rotation_interval",
@@ -628,6 +629,13 @@ class MainActivity : ReactActivity() {
 
         if (getAsyncStorageValue("@kiosk_lockscreen_emergency_call_enabled", "false") == "true") {
           whitelist.addAll(getEmergencyDialerPackages())
+        }
+
+        // #268: opt-in, so the "Allow USB debugging?" dialog (an activity of SystemUI) can be
+        // answered in lock mode. Off by default: with it on, anyone who can plug a computer
+        // into the tablet can see the dialog and tap Allow.
+        if (getAsyncStorageValue("@kiosk_allow_usb_debug_dialog", "false") == "true") {
+          whitelist.add("com.android.systemui")
         }
         
         val uniqueWhitelist = whitelist.distinct()

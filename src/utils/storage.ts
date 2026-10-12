@@ -20,6 +20,7 @@ export const KEYS = {
   SCREEN_LOCK_COMPAT: '@kiosk_screen_lock_compat',
   ALLOW_REMOTE_SCREENSHOT: '@kiosk_allow_remote_screenshot',
   ALLOW_HARDWARE_SCREENSHOT: '@kiosk_allow_hardware_screenshot',
+  ALLOW_USB_DEBUG_DIALOG: '@kiosk_allow_usb_debug_dialog',
   DEFAULT_LAUNCHER: '@kiosk_default_launcher',
   INTERCOM_MODE: '@kiosk_intercom_mode',
   SCREENSAVER_ENABLED: '@screensaver_enabled',
@@ -420,6 +421,26 @@ export const StorageService = {
     }
   },
 
+  // USB DEBUGGING DIALOG (#268) - opt-in; default false. The native side whitelists SystemUI
+  // for Lock Mode when this is on (see KioskModule / MainActivity / BootLockActivity).
+  saveAllowUsbDebugDialog: async (value: boolean): Promise<void> => {
+    try {
+      await AsyncStorage.setItem(KEYS.ALLOW_USB_DEBUG_DIALOG, JSON.stringify(value));
+    } catch (error) {
+      console.error('Error saving allow USB debugging dialog:', error);
+    }
+  },
+
+  getAllowUsbDebugDialog: async (): Promise<boolean> => {
+    try {
+      const value = await AsyncStorage.getItem(KEYS.ALLOW_USB_DEBUG_DIALOG);
+      return value ? JSON.parse(value) : false;
+    } catch (error) {
+      console.error('Error getting allow USB debugging dialog:', error);
+      return false;
+    }
+  },
+
   //DEFAULT LAUNCHER (#199) — opt-in, Device Owner only; default false → behavior unchanged
   saveDefaultLauncher: async (value: boolean): Promise<void> => {
     try {
@@ -516,6 +537,7 @@ export const StorageService = {
         // Power Button
         KEYS.ALLOW_POWER_BUTTON,
         KEYS.ALLOW_HARDWARE_SCREENSHOT,
+        KEYS.ALLOW_USB_DEBUG_DIALOG,
         KEYS.SCREEN_LOCK_COMPAT,
         KEYS.BLOCK_FACTORY_RESET,
         KEYS.DEFAULT_LAUNCHER,
@@ -3725,6 +3747,7 @@ export const StorageService = {
         overlayButtonPosition: str(KEYS.OVERLAY_BUTTON_POSITION, 'bottom-right'),
         blockFactoryReset: bool(KEYS.BLOCK_FACTORY_RESET),
         allowHardwareScreenshot: bool(KEYS.ALLOW_HARDWARE_SCREENSHOT),
+        allowUsbDebugDialog: bool(KEYS.ALLOW_USB_DEBUG_DIALOG),
         allowRemoteScreenshot: bool(KEYS.ALLOW_REMOTE_SCREENSHOT),
         defaultLauncher: bool(KEYS.DEFAULT_LAUNCHER),
         screenLockCompat: bool(KEYS.SCREEN_LOCK_COMPAT),
@@ -3987,6 +4010,7 @@ export const StorageService = {
       set(KEYS.OVERLAY_BUTTON_POSITION, sec.overlayButtonPosition);
       set(KEYS.BLOCK_FACTORY_RESET, sec.blockFactoryReset);
       set(KEYS.ALLOW_HARDWARE_SCREENSHOT, sec.allowHardwareScreenshot);
+      set(KEYS.ALLOW_USB_DEBUG_DIALOG, sec.allowUsbDebugDialog);
       set(KEYS.ALLOW_REMOTE_SCREENSHOT, sec.allowRemoteScreenshot);
       set(KEYS.DEFAULT_LAUNCHER, sec.defaultLauncher);
       set(KEYS.SCREEN_LOCK_COMPAT, sec.screenLockCompat);

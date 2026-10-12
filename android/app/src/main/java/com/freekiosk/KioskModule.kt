@@ -681,6 +681,11 @@ class KioskModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
                             if (allowEmergencyCall) {
                                 whitelist.addAll(getEmergencyDialerPackages())
                             }
+
+                            // #268: opt-in, so the "Allow USB debugging?" dialog can be answered in lock mode
+                            if (isUsbDebugDialogAllowed()) {
+                                whitelist.add("com.android.systemui")
+                            }
                             
                             val uniqueWhitelist = whitelist.distinct()
                             
@@ -1713,6 +1718,30 @@ class KioskModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
     /**
      * Check if window.print() (Allow Printing) is enabled in settings (read from AsyncStorage)
      */
+    /**
+     * #268: whether the admin allowed the system "Allow USB debugging?" dialog in lock mode.
+     * That dialog is an activity of SystemUI, which lock task keeps from coming to the front
+     * unless the package is whitelisted. Off by default: with it on, anyone who can plug a
+     * computer into the tablet can see the dialog and tap Allow.
+     */
+    private fun isUsbDebugDialogAllowed(): Boolean {
+        return try {
+            val dbPath = reactApplicationContext.getDatabasePath("RKStorage").absolutePath
+            val db = android.database.sqlite.SQLiteDatabase.openDatabase(dbPath, null, android.database.sqlite.SQLiteDatabase.OPEN_READONLY)
+            val cursor = db.rawQuery(
+                "SELECT value FROM catalystLocalStorage WHERE key = ?",
+                arrayOf("@kiosk_allow_usb_debug_dialog")
+            )
+            val result = cursor.moveToFirst() && cursor.getString(0) == "true"
+            cursor.close()
+            db.close()
+            result
+        } catch (e: Exception) {
+            android.util.Log.w("KioskModule", "Could not read the USB debugging dialog setting: ${e.message}")
+            false
+        }
+    }
+
     private fun isWindowPrintEnabled(): Boolean {
         return try {
             val dbPath = reactApplicationContext.getDatabasePath("RKStorage").absolutePath

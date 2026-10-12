@@ -428,7 +428,10 @@
       "allowRemoteScreenshotsHint": "Le mode verrouillé bloque la capture d'écran sur tout l'appareil (Alimentation+Volume bas), ce qui empêche aussi l'API REST /api/screenshot et les commandes de capture cloud de capturer une autre application que FreeKiosk (mode multi-applications). Activez ceci pour laisser FreeKiosk lever ce blocage le temps d'une capture à distance, puis le rétablir. Nécessite le service d'accessibilité FreeKiosk et Android 11+.",
       "allowHardwareScreenshots": "Autoriser les captures d'écran avec les boutons",
       "allowHardwareScreenshotsHint": "Le mode verrouillé bloque la combinaison de capture d'écran Alimentation+Volume bas pour toute personne utilisant l'appareil. Activez ceci pour l'autoriser à nouveau quand le mode verrouillé est actif. Toute personne devant l'appareil peut alors capturer l'écran. Prend effet au prochain démarrage du mode verrouillé.",
-      "remoteScreenshotWarning": "Pendant qu'une capture d'écran à distance est prise, la combinaison matérielle de capture d'écran est brièvement disponible pour quiconque se trouve devant l'appareil."
+      "remoteScreenshotWarning": "Pendant qu'une capture d'écran à distance est prise, la combinaison matérielle de capture d'écran est brièvement disponible pour quiconque se trouve devant l'appareil.",
+      "allowUsbDebugDialog": "Autoriser l'invite de débogage USB en mode verrouillé",
+      "allowUsbDebugDialogHint": "Quand un nouvel ordinateur est branché, Android demande sur l'appareil « Autoriser le débogage USB ? ». Le mode verrouillé empêche cette invite d'apparaître : un nouvel ordinateur reste donc non autorisé tant que le mode verrouillé n'est pas désactivé. Activez ceci pour que l'invite puisse apparaître quand le mode verrouillé est actif. Réservé au Device Owner. Prend effet au prochain démarrage du mode verrouillé. Vérifié sur Android standard uniquement.",
+      "allowUsbDebugDialogWarning": "Tant que cette option est activée, toute personne pouvant brancher un ordinateur sur l'appareil peut voir l'invite et appuyer sur Autoriser, ce qui donne à cet ordinateur un accès ADB. Les autres écrans de l'interface système ne sont plus bloqués non plus. Désactivez-la une fois l'opération terminée."
     },
     "autoLaunch": {
       "title": "Lancement automatique",

@@ -201,6 +201,7 @@ export type IconName =
   | 'eye-off-outline'
   | 'bluetooth'
   | 'nfc'
+  | 'usb'
   | 'headphones'
   | 'television'
   | 'microphone'

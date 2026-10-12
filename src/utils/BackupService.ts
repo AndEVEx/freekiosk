@@ -192,6 +192,7 @@ const BACKUP_KEYS = [
   '@kiosk_screen_lock_compat',
   '@kiosk_allow_remote_screenshot',
   '@kiosk_allow_hardware_screenshot',
+  '@kiosk_allow_usb_debug_dialog',
   '@screensaver_proximity_enabled',
   '@kiosk_restart_button_enabled',
   '@kiosk_restart_button_long_press_seconds',

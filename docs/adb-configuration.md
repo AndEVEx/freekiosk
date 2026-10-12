@@ -240,6 +240,7 @@ Every key below is a straight passthrough: the value you pass is stored as-is.
 | `--ez allow_system_info false` | Allow the status bar system info in lock task |
 | `--ez block_factory_reset false` | Apply the `DISALLOW_FACTORY_RESET` restriction |
 | `--ez allow_hardware_screenshot true` | Allow the Power + Volume Down screenshot while Lock Mode is on (Device Owner only, off by default, applies the next time Lock Mode starts) |
+| `--ez allow_usb_debug_dialog true` | Let the "Allow USB debugging?" prompt appear while Lock Mode is on (Device Owner only, off by default, applies the next time Lock Mode starts; see [the troubleshooting entry](#-the-allow-usb-debugging-prompt-does-not-appear-in-lock-mode)) |
 | `--ez keep_screen_on true` | Keep the display awake |
 
 **WebView behavior**
@@ -1007,6 +1008,19 @@ Alternatively, you can enable the Accessibility Service manually: Settings → A
 1. Enable USB Debugging in Developer Options
 2. Accept the "Allow USB debugging" prompt on device
 3. Verify with `adb devices`
+
+### 🔒 The "Allow USB debugging" prompt does not appear in Lock Mode
+
+**Symptom**: a computer that was never authorized shows as `unauthorized` in `adb devices`, and the prompt never shows on the tablet while Lock Mode is on.
+
+**Cause**: the prompt is a screen of the system interface (SystemUI), and Lock Mode only lets whitelisted apps come to the front. Checked on an Android 15 emulator: with the setting off, the system refuses it (`Attempted Lock Task Mode violation`); with it on, a SystemUI screen opens over Lock Mode.
+
+**Solutions**:
+1. Authorize the computer before turning Lock Mode on. The authorization is remembered.
+2. For a new computer later, turn Lock Mode off in the settings (5 taps, PIN), plug the computer in, tap Allow, then turn Lock Mode back on.
+3. Or switch on **Settings > Security > Allow the USB Debugging Prompt In Lock Mode** (`--ez allow_usb_debug_dialog true`). Device Owner only, off by default, and it takes effect the next time Lock Mode starts. **While it is on, anyone who can plug a computer into the tablet can see the prompt and tap Allow**, which gives that computer ADB access, and the other screens of the system interface are no longer blocked either. Turn it off when you are done.
+
+The real prompt could not be triggered on the emulator (it does not enforce ADB authorization), and only stock Android (`com.android.systemui`) was checked: on a manufacturer's Android the prompt may belong to another package.
 
 ### 🔄 How to reset and re-provision
 

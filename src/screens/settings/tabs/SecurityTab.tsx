@@ -40,6 +40,8 @@ interface SecurityTabProps {
   onAllowRemoteScreenshotChange: (value: boolean) => void;
   allowHardwareScreenshot: boolean;
   onAllowHardwareScreenshotChange: (value: boolean) => void;
+  allowUsbDebugDialog: boolean;
+  onAllowUsbDebugDialogChange: (value: boolean) => void;
   
   // Notifications (NFC support)
   allowNotifications: boolean;
@@ -128,6 +130,8 @@ const SecurityTab: React.FC<SecurityTabProps> = ({
   onAllowRemoteScreenshotChange,
   allowHardwareScreenshot,
   onAllowHardwareScreenshotChange,
+  allowUsbDebugDialog,
+  onAllowUsbDebugDialogChange,
   allowNotifications,
   onAllowNotificationsChange,
   allowSystemInfo,
@@ -262,6 +266,21 @@ const SecurityTab: React.FC<SecurityTabProps> = ({
               value={allowSystemInfo}
               onValueChange={onAllowSystemInfoChange}
             />
+            <View style={styles.divider} />
+            <SettingsSwitch
+              label={t('security.lockMode.allowUsbDebugDialog')}
+              icon="usb"
+              hint={t('security.lockMode.allowUsbDebugDialogHint')}
+              value={allowUsbDebugDialog}
+              onValueChange={onAllowUsbDebugDialogChange}
+            />
+            {allowUsbDebugDialog && (
+              <SettingsInfoBox variant="warning">
+                <Text style={styles.infoText}>
+                  {t('security.lockMode.allowUsbDebugDialogWarning')}
+                </Text>
+              </SettingsInfoBox>
+            )}
           </>
         )}
 

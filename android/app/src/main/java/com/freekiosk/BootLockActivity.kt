@@ -169,6 +169,10 @@ class BootLockActivity : Activity() {
             val whitelist = mutableListOf(packageName)
             whitelist.addAll(readManagedAppPackages())
             readExternalAppPackage()?.let { whitelist.add(it) }
+            // #268: same opt-in as MainActivity's whitelist
+            if (readAsyncStorageValue("@kiosk_allow_usb_debug_dialog", "false") == "true") {
+                whitelist.add("com.android.systemui")
+            }
             val unique = whitelist.distinct().toTypedArray()
 
             dpm.setLockTaskPackages(admin, unique)
