@@ -187,6 +187,18 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
   // Read by the cloud config-sync listener, which is registered once and would otherwise
   // close over the mode as it was at mount.
   const displayModeRef = useRef(displayMode);
+  // What launchExternalApp hands to the overlay when its caller passes nothing. The AppState
+  // listener that relaunches the app in "immediate" mode is registered once at mount, so the
+  // launchExternalApp it calls still sees the first render's defaults: without the ref, any
+  // relaunch restarted the overlay with 5 taps anywhere (#294).
+  const overlaySettingsRef = useRef({
+    returnTapCount, returnTapTimeout, returnMode, returnButtonPosition, autoRelaunchApp, allowNotifications,
+  });
+  useEffect(() => {
+    overlaySettingsRef.current = {
+      returnTapCount, returnTapTimeout, returnMode, returnButtonPosition, autoRelaunchApp, allowNotifications,
+    };
+  }, [returnTapCount, returnTapTimeout, returnMode, returnButtonPosition, autoRelaunchApp, allowNotifications]);
 
   // Track focus transitions (true→false) to avoid false cleanup triggers
   const prevIsFocusedRef = useRef<boolean>(true);
@@ -2848,11 +2860,13 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
         return;
       }
 
-      // Use provided values or fall back to state
-      const finalTapCount = tapCount ?? returnTapCount;
-      const finalTapTimeout = tapTimeout ?? returnTapTimeout;
-      const finalReturnMode = mode ?? returnMode;
-      const finalButtonPosition = buttonPos ?? returnButtonPosition;
+      // Use provided values or fall back to the current settings (through the ref: this
+      // function can be a stale closure, see overlaySettingsRef)
+      const current = overlaySettingsRef.current;
+      const finalTapCount = tapCount ?? current.returnTapCount;
+      const finalTapTimeout = tapTimeout ?? current.returnTapTimeout;
+      const finalReturnMode = mode ?? current.returnMode;
+      const finalButtonPosition = buttonPos ?? current.returnButtonPosition;
 
       // Start OverlayService BEFORE launching the external app
       try {
@@ -2862,10 +2876,10 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
           finalReturnMode, 
           finalButtonPosition,
           packageName, // Pass locked package for monitoring
-          autoRelaunchApp, // Pass auto-relaunch setting
-          allowNotifications // Pass NFC enabled flag for monitoring filter
+          current.autoRelaunchApp, // Pass auto-relaunch setting
+          current.allowNotifications // Pass NFC enabled flag for monitoring filter
         );
-        console.log(`[KioskScreen] OverlayService started with tapCount=${finalTapCount}, tapTimeout=${finalTapTimeout}, mode=${finalReturnMode}, position=${finalButtonPosition}, package=${packageName}, autoRelaunch=${autoRelaunchApp}, nfcEnabled=${allowNotifications}`);
+        console.log(`[KioskScreen] OverlayService started with tapCount=${finalTapCount}, tapTimeout=${finalTapTimeout}, mode=${finalReturnMode}, position=${finalButtonPosition}, package=${packageName}, autoRelaunch=${current.autoRelaunchApp}, nfcEnabled=${current.allowNotifications}`);
       } catch (overlayError) {
         console.warn('[KioskScreen] Failed to start overlay service:', overlayError);
         // Continue anyway — the external app can still be launched
