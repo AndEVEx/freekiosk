@@ -262,6 +262,14 @@
     return;
   }
 
+  // A PDF the page built itself (blob:) is kept in the app cache and opened from there. The
+  // download button works by navigating to the URL, which the native download listener turns
+  // into a DownloadManager request: not possible for a local file, so hide the button.
+  if (pdfUrl.indexOf('file://') === 0) {
+    var dlBtn = document.getElementById('downloadBtn');
+    if (dlBtn) dlBtn.style.display = 'none';
+  }
+
   // Notify RN of user interaction (for screensaver reset)
   function notifyInteraction() {
     try {

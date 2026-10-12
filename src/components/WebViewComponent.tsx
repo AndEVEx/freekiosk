@@ -19,7 +19,11 @@ const { HttpServerModule } = NativeModules;
 import KioskModule from '../utils/KioskModule';
 import UpdateModule from '../utils/UpdateModule';
 import Icon, { IconName } from './Icon';
+import RNFS from 'react-native-fs';
 import { WebView } from 'react-native-webview';
+// From src/, not lib/: Metro resolves react-native-webview to its src/ entry, and loading lib/ as
+// well registers the native view twice ("Tried to register two views with the same name RNCWebView").
+import NativeRNCWebView, { Commands as NativeWebViewCommands } from 'react-native-webview/src/RNCWebViewNativeComponent';
 import type { WebViewErrorEvent, ShouldStartLoadRequest, WebViewRenderProcessGoneEvent } from 'react-native-webview/lib/WebViewTypes';
 import { useNavigation } from '@react-navigation/native';
 import PrintModule from '../utils/PrintModule';
@@ -745,6 +749,51 @@ const WebViewComponent = forwardRef<WebViewComponentRef, WebViewComponentProps>(
       interceptPdfLinks();
       var pdfObserver = new MutationObserver(interceptPdfLinks);
       pdfObserver.observe(document.body, { childList: true, subtree: true });
+
+      // PDF built by the page itself and handed over as a blob: URL (single-page apps that
+      // fetch a PDF with an Authorization header, then download it through
+      // URL.createObjectURL). Neither the native download listener nor the viewer, which is
+      // another page, can read a blob: URL of this page, so read the bytes here and give them
+      // to the app, which opens them in the viewer.
+      var fkBlobs = {};
+      var fkCreateObjectURL = URL.createObjectURL;
+      var fkRevokeObjectURL = URL.revokeObjectURL;
+      URL.createObjectURL = function(obj) {
+        var u = fkCreateObjectURL.apply(URL, arguments);
+        try { if (obj instanceof Blob) fkBlobs[u] = obj; } catch (e) {}
+        return u;
+      };
+      URL.revokeObjectURL = function(u) {
+        // The page often revokes right after clicking: the FileReader below already holds the Blob.
+        setTimeout(function() { delete fkBlobs[u]; }, 0);
+        return fkRevokeObjectURL.apply(URL, arguments);
+      };
+      function fkSendPdfBlob(url) {
+        var blob = fkBlobs[url];
+        if (!blob || String(blob.type || '').toLowerCase().indexOf('pdf') === -1) return false;
+        var reader = new FileReader();
+        reader.onload = function() {
+          var s = String(reader.result);
+          window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'PDF_BLOB', data: s.slice(s.indexOf(',') + 1) }));
+        };
+        reader.readAsDataURL(blob);
+        return true;
+      }
+      // Programmatic anchor.click() (even on a detached element) and real taps on a link
+      var fkAnchorClick = HTMLAnchorElement.prototype.click;
+      HTMLAnchorElement.prototype.click = function() {
+        if (this.href && this.href.indexOf('blob:') === 0 && fkSendPdfBlob(this.href)) return;
+        return fkAnchorClick.apply(this, arguments);
+      };
+      document.addEventListener('click', function(e) {
+        var a = e.target && e.target.closest ? e.target.closest('a[href^="blob:"]') : null;
+        if (a && fkSendPdfBlob(a.href)) { e.preventDefault(); e.stopPropagation(); }
+      }, true);
+      var fkWindowOpen = window.open;
+      window.open = function(u) {
+        if (typeof u === 'string' && u.indexOf('blob:') === 0 && fkSendPdfBlob(u)) return null;
+        return fkWindowOpen.apply(window, arguments);
+      };
     }
   })();
   true;
@@ -895,6 +944,52 @@ const WebViewComponent = forwardRef<WebViewComponentRef, WebViewComponentProps>(
       .catch((err: any) => fail(err?.code ?? 'ERROR', err?.message ?? 'Printing failed'));
   };
 
+  // The native WebView, captured as it is rendered (see nativeConfig below): the ref the
+  // WebView hands out has no loadUrl, and a page cannot navigate itself to file:// (that is
+  // what the native download listener does for http PDFs).
+  const nativeWebViewRef = useRef<any>(null);
+  const NativeWebViewWithRef = useMemo(() => forwardRef<any, any>((props, ref) => {
+    const setRef = useCallback((node: any) => {
+      nativeWebViewRef.current = node;
+      if (typeof ref === 'function') {
+        ref(node);
+      } else if (ref) {
+        ref.current = node;
+      }
+    }, [ref]);
+    const NativeView: any = NativeRNCWebView;
+    return <NativeView {...props} ref={setRef} />;
+  }), []);
+
+  // A PDF the page built as a blob: URL, sent by the script injected when the PDF viewer is on.
+  // Written to the cache (the previous one is removed) and opened in the local viewer.
+  const MAX_BLOB_PDF_BASE64_CHARS = 40 * 1024 * 1024; // about 30 MB of PDF
+  const openBlobPdf = async (base64: unknown): Promise<void> => {
+    if (typeof base64 !== 'string' || base64.length === 0 || base64.length > MAX_BLOB_PDF_BASE64_CHARS) {
+      console.warn('[FreeKiosk] PDF blob ignored (empty or too large)');
+      return;
+    }
+    try {
+      const dir = `${RNFS.CachesDirectoryPath}/fk-pdf`;
+      if (await RNFS.exists(dir)) {
+        for (const f of await RNFS.readDir(dir)) {
+          await RNFS.unlink(f.path).catch(() => {});
+        }
+      } else {
+        await RNFS.mkdir(dir);
+      }
+      const path = `${dir}/blob-${Date.now()}.pdf`;
+      await RNFS.writeFile(path, base64, 'base64');
+      const viewerUrl = `file:///android_asset/pdfjs/viewer.html?file=${encodeURIComponent(`file://${path}`)}`;
+      console.log('[FreeKiosk] PDF blob received, opening in viewer');
+      if (nativeWebViewRef.current) {
+        NativeWebViewCommands.loadUrl(nativeWebViewRef.current, viewerUrl);
+      }
+    } catch (e) {
+      console.error('[FreeKiosk] Could not open the PDF blob:', e);
+    }
+  };
+
   const onMessageHandler = (event: any) => {
     const message = event.nativeEvent.data;
     
@@ -940,6 +1035,8 @@ const WebViewComponent = forwardRef<WebViewComponentRef, WebViewComponentProps>(
             .catch((err: any) => console.error('[WebView] Print failed:', err));
         } else if (data.type === 'FK_PRINTER') {
           handlePrinterRequest(data, event.nativeEvent?.url);
+        } else if (data.type === 'PDF_BLOB' && pdfViewerEnabled) {
+          openBlobPdf(data.data);
         } else if (data.type === 'PDF_VIEWER_CLOSE') {
           // User closed PDF viewer, go back to previous page
           if (webViewRef.current) {
@@ -1167,6 +1264,7 @@ const WebViewComponent = forwardRef<WebViewComponentRef, WebViewComponentProps>(
     <View style={styles.container} ref={containerViewRef}>
       <WebView
         ref={webViewRef}
+        nativeConfig={{ component: NativeWebViewWithRef as any }}
         source={{ uri: error ? 'about:blank' : url }}
         style={styles.webview}
         
