@@ -45,6 +45,8 @@ class MainActivity : ReactActivity() {
      * that is merely booting slowly.
      */
     private const val JS_READY_GRACE_MS = 90_000L
+    // #293: how often the WebView cookies are written to disk (see cookieFlushRunnable).
+    private const val COOKIE_FLUSH_INTERVAL_MS = 10_000L
 
     /**
      * #248: upper bound on a re-lock deferred for the power menu. The re-lock normally
@@ -215,6 +217,25 @@ class MainActivity : ReactActivity() {
   // this can never leave the device unlocked indefinitely.
   private val powerMenuRelockHandler = Handler(Looper.getMainLooper())
   private var powerMenuRelockPending = false
+
+  // #293: the WebView keeps new cookies in memory and writes them to disk about every 30
+  // seconds, so a power cut shortly after a login lost the session cookie and logged the user
+  // out. flush() writes them now and costs nothing when nothing changed.
+  private val cookieFlushHandler = Handler(Looper.getMainLooper())
+  private val cookieFlushRunnable = object : Runnable {
+    override fun run() {
+      flushCookies()
+      cookieFlushHandler.postDelayed(this, COOKIE_FLUSH_INTERVAL_MS)
+    }
+  }
+
+  private fun flushCookies() {
+    try {
+      android.webkit.CookieManager.getInstance().flush()
+    } catch (e: Exception) {
+      android.util.Log.w("MainActivity", "Cookie flush failed: ${e.message}")
+    }
+  }
 
   override fun getMainComponentName(): String = "FreeKiosk"
 
@@ -757,8 +778,17 @@ class MainActivity : ReactActivity() {
     }
   }
 
+  override fun onPause() {
+    super.onPause()
+    cookieFlushHandler.removeCallbacks(cookieFlushRunnable)
+    flushCookies()
+  }
+
   override fun onResume() {
     super.onResume()
+
+    cookieFlushHandler.removeCallbacks(cookieFlushRunnable)
+    cookieFlushHandler.postDelayed(cookieFlushRunnable, COOKIE_FLUSH_INTERVAL_MS)
 
     readExternalAppConfig()
     
