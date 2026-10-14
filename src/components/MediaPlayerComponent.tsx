@@ -11,6 +11,7 @@ import { WebView } from 'react-native-webview';
 import Icon from './Icon';
 import type { MediaItem, MediaFitMode } from '../types/mediaPlayer';
 import { useTranslation } from 'react-i18next';
+import { useCachedMediaItems } from '../utils/useCachedMediaItems';
 
 interface MediaPlayerComponentProps {
   items: MediaItem[];
@@ -24,11 +25,13 @@ interface MediaPlayerComponentProps {
   transitionEnabled: boolean;
   transitionDuration: number;
   muteVideo: boolean;
+  /** Play from files kept on the device, so a network drop does not stop the playlist */
+  cacheOffline?: boolean;
   onUserInteraction?: (event?: { isTap?: boolean; x?: number; y?: number }) => void;
 }
 
 const MediaPlayerComponent: React.FC<MediaPlayerComponentProps> = ({
-  items,
+  items: configuredItems,
   autoPlay,
   loop,
   shuffle,
@@ -39,10 +42,13 @@ const MediaPlayerComponent: React.FC<MediaPlayerComponentProps> = ({
   transitionEnabled,
   transitionDuration,
   muteVideo,
+  cacheOffline = false,
   onUserInteraction,
 }) => {
   const { t } = useTranslation();
   const webViewRef = useRef<WebView>(null);
+  // With the cache off this is the playlist as configured, ready at once
+  const { items, ready } = useCachedMediaItems(configuredItems, cacheOffline);
 
   const htmlContent = useMemo(() => {
     if (!items || items.length === 0) {
@@ -73,6 +79,12 @@ const MediaPlayerComponent: React.FC<MediaPlayerComponentProps> = ({
       // ignore
     }
   }, [onUserInteraction]);
+
+  // Waiting for what is on the device (a few milliseconds): nothing to show yet, and no
+  // start from a URL that the cache is about to replace
+  if (!ready) {
+    return <View style={[styles.container, { backgroundColor }]} />;
+  }
 
   if (!items || items.length === 0) {
     return (

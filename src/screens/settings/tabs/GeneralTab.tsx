@@ -174,6 +174,8 @@ interface GeneralTabProps {
   onMediaPlayerTransitionDurationChange: (value: string) => void;
   mediaPlayerMute: boolean;
   onMediaPlayerMuteChange: (value: boolean) => void;
+  mediaPlayerCache: boolean;
+  onMediaPlayerCacheChange: (value: boolean) => void;
   onPickMediaFromDevice: (type: 'video' | 'image' | 'any') => void;
   pickingMedia: boolean;
   
@@ -294,6 +296,8 @@ const GeneralTab: React.FC<GeneralTabProps> = ({
   onMediaPlayerTransitionDurationChange,
   mediaPlayerMute,
   onMediaPlayerMuteChange,
+  mediaPlayerCache,
+  onMediaPlayerCacheChange,
   onPickMediaFromDevice,
   pickingMedia,
   basicAuthUsername,
@@ -542,6 +546,13 @@ const GeneralTab: React.FC<GeneralTabProps> = ({
               value={mediaPlayerMute}
               onValueChange={onMediaPlayerMuteChange}
               hint={t('general.playback.muteHint')}
+            />
+
+            <SettingsSwitch
+              label={t('general.playback.cache')}
+              value={mediaPlayerCache}
+              onValueChange={onMediaPlayerCacheChange}
+              hint={t('general.playback.cacheHint')}
             />
 
             <View style={styles.rotationSpacer} />

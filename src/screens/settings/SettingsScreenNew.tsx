@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { defaultMediaCacheEnabled } from '../../utils/MediaCache';
 import {
   View,
   Text,
@@ -258,6 +259,7 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation, route })
   const [mediaPlayerTransition, setMediaPlayerTransition] = useState<boolean>(true);
   const [mediaPlayerTransitionDuration, setMediaPlayerTransitionDuration] = useState<string>('500');
   const [mediaPlayerMute, setMediaPlayerMute] = useState<boolean>(false);
+  const [mediaPlayerCache, setMediaPlayerCache] = useState<boolean>(defaultMediaCacheEnabled());
   const [pickingMedia, setPickingMedia] = useState<boolean>(false);
 
   // Update states
@@ -795,6 +797,7 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation, route })
     const savedMediaTransition = await StorageService.getMediaPlayerTransition();
     const savedMediaTransitionDuration = await StorageService.getMediaPlayerTransitionDuration();
     const savedMediaMute = await StorageService.getMediaPlayerMute();
+    const savedMediaCache = await StorageService.getMediaPlayerCache();
     setMediaPlayerItems(savedMediaItems);
     setMediaPlayerAutoPlay(savedMediaAutoPlay);
     setMediaPlayerLoop(savedMediaLoop);
@@ -806,6 +809,7 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation, route })
     setMediaPlayerTransition(savedMediaTransition);
     setMediaPlayerTransitionDuration(String(savedMediaTransitionDuration));
     setMediaPlayerMute(savedMediaMute);
+    setMediaPlayerCache(savedMediaCache);
   };
 
   const loadCertificates = async (): Promise<void> => {
@@ -1714,6 +1718,7 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation, route })
       const transDur = parseInt(mediaPlayerTransitionDuration, 10);
       await StorageService.saveMediaPlayerTransitionDuration(isNaN(transDur) ? 500 : Math.max(0, Math.min(3000, transDur)));
       await StorageService.saveMediaPlayerMute(mediaPlayerMute);
+      await StorageService.saveMediaPlayerCache(mediaPlayerCache);
     }
 
     // Update accessibility whitelist if device owner
@@ -1884,6 +1889,7 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation, route })
               setMediaPlayerTransition(true);
               setMediaPlayerTransitionDuration('500');
               setMediaPlayerMute(false);
+              setMediaPlayerCache(defaultMediaCacheEnabled());
 
               try {
                 await KioskModule.stopLockTask();
@@ -2132,6 +2138,8 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation, route })
             onMediaPlayerTransitionDurationChange={setMediaPlayerTransitionDuration}
             mediaPlayerMute={mediaPlayerMute}
             onMediaPlayerMuteChange={setMediaPlayerMute}
+            mediaPlayerCache={mediaPlayerCache}
+            onMediaPlayerCacheChange={setMediaPlayerCache}
             onPickMediaFromDevice={handlePickMediaFromDevice}
             pickingMedia={pickingMedia}
             basicAuthUsername={basicAuthUsername}

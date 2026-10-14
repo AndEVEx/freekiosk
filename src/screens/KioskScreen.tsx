@@ -6,6 +6,7 @@ import { useIsFocused, useFocusEffect } from '@react-navigation/native';
 import WebViewComponent, { WebViewComponentRef } from '../components/WebViewComponent';
 import { WebView } from 'react-native-webview';
 import MediaPlayerComponent from '../components/MediaPlayerComponent';
+import { defaultMediaCacheEnabled } from '../utils/MediaCache';
 import StatusBar from '../components/StatusBar';
 import MotionDetector from '../components/MotionDetector';
 import ProximityDetectionModule, { onProximityNear as onProximityNearEvent } from '../utils/ProximityDetectionModule';
@@ -271,6 +272,7 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
   const [mediaPlayerTransition, setMediaPlayerTransition] = useState<boolean>(true);
   const [mediaPlayerTransitionDuration, setMediaPlayerTransitionDuration] = useState<number>(500);
   const [mediaPlayerMute, setMediaPlayerMute] = useState<boolean>(false);
+  const [mediaPlayerCache, setMediaPlayerCache] = useState<boolean>(defaultMediaCacheEnabled());
 
   // AppState listener - detects when the app returns to the foreground
   useEffect(() => {
@@ -2103,6 +2105,7 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
         const mpTransition = bool(K.MEDIA_PLAYER_TRANSITION, true);
         const mpTransitionDuration = num(K.MEDIA_PLAYER_TRANSITION_DURATION, 500);
         const mpMute = bool(K.MEDIA_PLAYER_MUTE, false);
+        const mpCache = bool(K.MEDIA_PLAYER_CACHE, defaultMediaCacheEnabled());
         setMediaPlayerItems(mpItems);
         setMediaPlayerAutoPlay(mpAutoPlay);
         setMediaPlayerLoop(mpLoop);
@@ -2114,6 +2117,7 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
         setMediaPlayerTransition(mpTransition);
         setMediaPlayerTransitionDuration(mpTransitionDuration);
         setMediaPlayerMute(mpMute);
+        setMediaPlayerCache(mpCache);
         console.log('[KioskScreen] Media player loaded:', mpItems.length, 'items');
       }
 
@@ -3101,6 +3105,7 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
             transitionEnabled={mediaPlayerTransition}
             transitionDuration={mediaPlayerTransitionDuration}
             muteVideo={mediaPlayerMute}
+            cacheOffline={mediaPlayerCache}
             onUserInteraction={onUserInteraction}
           />
         </>

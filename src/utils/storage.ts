@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { defaultMediaCacheEnabled } from './MediaCache';
 import { BlockingRegion } from '../types/blockingOverlay';
 import { ScreenScheduleRule } from '../types/screenScheduler';
 import {
@@ -197,6 +198,7 @@ export const KEYS = {
   MEDIA_PLAYER_TRANSITION: '@kiosk_media_player_transition',
   MEDIA_PLAYER_TRANSITION_DURATION: '@kiosk_media_player_transition_duration',
   MEDIA_PLAYER_MUTE: '@kiosk_media_player_mute',
+  MEDIA_PLAYER_CACHE: '@kiosk_media_player_cache',
   // Legacy keys for backward compatibility
   SCREENSAVER_DELAY: '@screensaver_delay',
   MOTION_DETECTION_ENABLED: '@motion_detection_enabled',
@@ -565,6 +567,7 @@ export const StorageService = {
         KEYS.MEDIA_PLAYER_TRANSITION,
         KEYS.MEDIA_PLAYER_TRANSITION_DURATION,
         KEYS.MEDIA_PLAYER_MUTE,
+        KEYS.MEDIA_PLAYER_CACHE,
         // Notifications
         KEYS.ALLOW_NOTIFICATIONS,
         // System Info (audio fix)
@@ -3388,6 +3391,24 @@ export const StorageService = {
     }
   },
 
+  saveMediaPlayerCache: async (value: boolean): Promise<void> => {
+    try {
+      await AsyncStorage.setItem(KEYS.MEDIA_PLAYER_CACHE, JSON.stringify(value));
+    } catch (error) {
+      console.error('Error saving media player cache:', error);
+    }
+  },
+
+  getMediaPlayerCache: async (): Promise<boolean> => {
+    try {
+      const value = await AsyncStorage.getItem(KEYS.MEDIA_PLAYER_CACHE);
+      return value !== null ? JSON.parse(value) : defaultMediaCacheEnabled();
+    } catch (error) {
+      console.error('Error getting media player cache:', error);
+      return defaultMediaCacheEnabled();
+    }
+  },
+
   // DASHBOARD
   saveDashboardModeEnabled: async (value: boolean): Promise<void> => {
     try {
@@ -3642,6 +3663,7 @@ export const StorageService = {
           transition: bool(KEYS.MEDIA_PLAYER_TRANSITION, true),
           transitionDuration: num(KEYS.MEDIA_PLAYER_TRANSITION_DURATION, 500),
           mute: bool(KEYS.MEDIA_PLAYER_MUTE),
+          cache: bool(KEYS.MEDIA_PLAYER_CACHE, defaultMediaCacheEnabled()),
         },
         httpBasicAuth: { username: str(KEYS.HTTP_BASIC_AUTH_USERNAME) },
         externalApp: {
@@ -3887,6 +3909,7 @@ export const StorageService = {
         set(KEYS.MEDIA_PLAYER_TRANSITION, mp.transition);
         set(KEYS.MEDIA_PLAYER_TRANSITION_DURATION, mp.transitionDuration);
         set(KEYS.MEDIA_PLAYER_MUTE, mp.mute);
+        set(KEYS.MEDIA_PLAYER_CACHE, mp.cache);
       }
       const hba = g.httpBasicAuth as Record<string, unknown> | undefined;
       if (hba) set(KEYS.HTTP_BASIC_AUTH_USERNAME, hba.username);

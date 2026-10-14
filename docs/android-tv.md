@@ -12,13 +12,26 @@ FreeKiosk installs on Android TV and Google TV, appears in the apps row, and can
 | Remote only | OK presses a button, the arrows move the focus, and **the focused element is outlined in amber**. OK toggles a switch row. Typed text reaches the fields and Enter validates the PIN (checked with keys sent through `adb`, not with the TV's on-screen keyboard). |
 | Open the PIN screen | On the kiosk screen, press **Back 5 times**, each press within 2 seconds of the previous one. The PIN is still asked. |
 | Leave the settings | **Back** asks *Leave settings?* (stay, or leave without saving). Save is the button at the end of each tab. |
-| Media player | A video URL plays full screen on the Android TV emulator at 1080p. Media are streamed from their URL with no cache, so a network drop stops the playback. Videos and images from storage cannot be added on a TV (no file picker): use URLs. |
+| Media player | A video URL plays full screen on the Android TV emulator at 1080p. **Offline cache, on by default on a TV:** each video and image is downloaded to the device and played from there, so a network drop does not stop the playlist (see below). Videos and images from storage cannot be added on a TV (no file picker): use URLs. |
 | Apps that are made for TVs | An app that only declares a TV launcher (no phone launcher) can be picked as an external app, launched, relaunched and started on boot. |
 | No battery | A device with no battery sends no battery to the cloud (no made-up level, no battery alert), reports `present: false` over REST and MQTT, and hides the battery in the status bar. |
 | Ethernet | A box on Ethernet is reported online (`ethernet` in the status, `network.ethernet_connected` in the cloud heartbeat). |
 | What a TV does not have | The brightness settings are hidden (checked on screen). The quick brightness, rotation and torch buttons on the PIN screen and the camera and battery-optimisation permission steps are hidden too (from the code, not checked on screen). |
 
 On a tablet or a phone nothing changes: the TV behaviour only exists when Android reports a television.
+
+## Offline cache of the Media Player
+
+With **Settings > General > Playback > Play from the device (offline cache)** on, every http(s) video and image of the playlist is downloaded once to the device's private storage and played from the file. It is **on by default on a TV and off everywhere else**, so a tablet or a phone plays from the URL exactly as before.
+
+- A file is written as `.part` and renamed only when complete, so a cut download never leaves a half file that would be played.
+- Each file is checked again every 10 minutes with a conditional request (ETag, Last-Modified): an unchanged file is not downloaded again, a changed one is.
+- A failed check (offline, server down) leaves the files that are there. A device that starts offline plays what it has.
+- A file that is no longer in the playlist is deleted, and so is anything else left in the cache folder.
+- The first play of a new item waits for its download. Items from the device's own storage are already local and untouched.
+- Not done yet: a size limit for the cache (it only refuses a download that would leave less than 100 MB free), a download progress indicator, and pushing the playlist from the cloud as files rather than URLs.
+
+Checked on a tablet emulator with the network really cut (name resolution failing): with the cache on the video plays; with it off the screen stays black. Also checked: no cache folder and no call to the cache with the option off, no download of an unchanged file, and cleanup of a removed file, a stray file and an orphan `.part`. On the Android TV emulator the cache is on without any setting. Not tested on a real TV or box, with a large video, or on a full storage.
 
 ## What does not work yet
 

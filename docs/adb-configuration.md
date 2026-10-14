@@ -394,6 +394,12 @@ editor writes, so a rule built on a tablet and read back from the cloud is a val
 | `--es mqtt_allow_control "true"` | String | Allow remote control via MQTT |
 | `--es mqtt_device_name "name"` | String | Friendly device name for HA discovery |
 
+### Media Player Options
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `--ez media_player_cache true` | Boolean | Play the Media Player from files kept on the device (offline cache). Without it, the default is on for a TV and off everywhere else. The playlist itself is not set over ADB: use Settings or the cloud |
+
 ### Screensaver Options
 
 | Parameter | Type | Description |
