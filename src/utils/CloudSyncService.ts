@@ -5,6 +5,7 @@ import { StorageService, KEYS } from './storage';
 import DeviceControlService from '../services/DeviceControlService';
 import { CloudCommandService } from './CloudCommandService';
 import { getCapabilities } from './capabilities';
+import { getMediaCacheReport } from './MediaCacheReport';
 import KioskModule from './KioskModule';
 import {
   CloudCredentials,
@@ -254,6 +255,8 @@ class CloudSyncServiceClass {
             free_storage_mb: status.device.freeStorageMb,
             free_memory_mb: status.device.freeMemoryMb,
             uptime_seconds: status.device.uptime,
+            // Only once the offline cache has been on: any other device sends what it always did
+            ...(getMediaCacheReport() ? { media_cache: getMediaCacheReport() } : {}),
           },
         };
       } catch {

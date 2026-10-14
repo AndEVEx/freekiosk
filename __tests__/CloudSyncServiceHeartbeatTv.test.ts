@@ -155,3 +155,26 @@ describe('form factor reported to the cloud', () => {
     expect(body.device_info.form_factor).toBe('tablet');
   });
 });
+
+
+describe('offline media cache in the heartbeat', () => {
+  const { setMediaCacheReport } = require('../src/utils/MediaCacheReport');
+  afterEach(() => setMediaCacheReport(undefined));
+
+  it('sends nothing for a device that never used the cache', async () => {
+    const body = await heartbeatBody(statusWith({}));
+    expect(body.system).not.toHaveProperty('media_cache');
+  });
+
+  it('sends the report once the cache has been on', async () => {
+    const report = {
+      enabled: true, wanted: 3, cached: 2, bytes: 1000, partial_bytes: 0,
+      last_check_at: '2026-10-14T20:00:00.000Z', error: null,
+    };
+    setMediaCacheReport(report);
+    const body = await heartbeatBody(statusWith({}));
+    expect(body.system.media_cache).toEqual(report);
+    // the rest of the telemetry is unchanged
+    expect(body.system.model).toBe('Test');
+  });
+});

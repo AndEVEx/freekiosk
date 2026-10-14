@@ -7,6 +7,7 @@ import MediaCacheModule, {
   withCachedUrls,
   type MediaCacheMap,
 } from './MediaCache';
+import { buildReport, disabledReport, errorCode, getMediaCacheReport, setMediaCacheReport } from './MediaCacheReport';
 
 /** How often the files are checked against the server (a changed file is downloaded again) */
 export const MEDIA_CACHE_RECHECK_MS = 10 * 60 * 1000;
@@ -43,6 +44,24 @@ export function useCachedMediaItems(
       cachedRef.current = {};
       setCached({});
       setReady(true);
+      // A cache that was on has numbers to retract at the cloud, whether it was switched off
+      // just now or before the app restarted (then only the files on the device say so).
+      // A device that never used it has neither, and reports nothing.
+      if (getMediaCacheReport()) {
+        setMediaCacheReport(disabledReport());
+      } else if (MediaCacheModule?.getStats) {
+        let cancelledStats = false;
+        MediaCacheModule.getStats()
+          .then(stats => {
+            if (!cancelledStats && (stats.files > 0 || stats.partialBytes > 0)) {
+              setMediaCacheReport(disabledReport());
+            }
+          })
+          .catch(() => {});
+        return () => {
+          cancelledStats = true;
+        };
+      }
       return;
     }
     const cache = MediaCacheModule;
@@ -58,12 +77,27 @@ export function useCachedMediaItems(
       setCached(map);
     };
 
+    // For the cloud: what is on the device, and how the last check went. Never allowed to
+    // disturb playback, so every failure here is swallowed.
+    const report = async (map: MediaCacheMap, checkedAt: Date | null, error: string | null) => {
+      let stats = null;
+      try {
+        stats = (await cache.getStats?.()) ?? null;
+      } catch {
+        // The numbers are missing, the rest is still worth sending
+      }
+      if (!cancelled) setMediaCacheReport(buildReport(urls, map, stats, checkedAt, error));
+    };
+
     const syncOnce = async () => {
+      let error: string | null = null;
       try {
         apply(await cache.sync(urls, limitBytes));
-      } catch {
+      } catch (e) {
         // Offline or the check failed: what is on the device stays
+        error = errorCode(e);
       }
+      await report(cachedRef.current, new Date(), error);
       if (!cancelled) timer = setTimeout(syncOnce, MEDIA_CACHE_RECHECK_MS);
     };
 
@@ -75,6 +109,7 @@ export function useCachedMediaItems(
       }
       if (cancelled) return;
       setReady(true);
+      await report(cachedRef.current, null, null);
       syncOnce();
     })();
 
