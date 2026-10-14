@@ -12,6 +12,7 @@ FreeKiosk installs on Android TV and Google TV, appears in the apps row, and can
 | Remote only | OK presses a button, the arrows move the focus, and **the focused element is outlined in amber**. OK toggles a switch row. Typed text reaches the fields and Enter validates the PIN (checked with keys sent through `adb`, not with the TV's on-screen keyboard). |
 | Open the PIN screen | On the kiosk screen, press **Back 5 times**, each press within 2 seconds of the previous one. The PIN is still asked. |
 | Leave the settings | **Back** asks *Leave settings?* (stay, or leave without saving). Save is the button at the end of each tab. |
+| Media player | A video URL plays full screen on the Android TV emulator at 1080p. Media are streamed from their URL with no cache, so a network drop stops the playback. Videos and images from storage cannot be added on a TV (no file picker): use URLs. |
 | Apps that are made for TVs | An app that only declares a TV launcher (no phone launcher) can be picked as an external app, launched, relaunched and started on boot. |
 | No battery | A device with no battery sends no battery to the cloud (no made-up level, no battery alert), reports `present: false` over REST and MQTT, and hides the battery in the status bar. |
 | Ethernet | A box on Ethernet is reported online (`ethernet` in the status, `network.ethernet_connected` in the cloud heartbeat). |
@@ -22,7 +23,7 @@ On a tablet or a phone nothing changes: the TV behaviour only exists when Androi
 ## What does not work yet
 
 - **Volume Up ×5 does not work on a TV.** On the emulators the volume keys never reach the app. Use Back ×5. The tap escape does not exist either (no touch).
-- **External App mode: no remote escape.** While another app is in front, FreeKiosk gets no key, so Back ×5 cannot bring the PIN screen back. Use the REST API, MQTT or a FreeKiosk Cloud command, or `adb shell am start -n com.freekiosk/.MainActivity`. A key filter in the accessibility service would do it, but it changes what the service asks of every device, tablets included, and could not be checked on the emulators (injected keys do not go through it), so it was left out.
+- **External App mode is not offered on a TV.** While another app is in front, FreeKiosk gets no key, so Back ×5 cannot bring the PIN screen back. The option is hidden in Settings > General; a device already in that mode (set from the cloud or `adb`) keeps it, and the settings then say how to get out: the REST API, MQTT, a FreeKiosk Cloud command, or `adb shell am start -n com.freekiosk/.MainActivity`. A key filter in the accessibility service would do it, but it changes what the service asks of every device, tablets included, and could not be checked on the emulators (injected keys do not go through it), so it was left out.
 - **A web page made for touch** may not be usable with arrows and OK. Chromium's own focus navigation applies; there is no virtual pointer. A mouse click counts toward the tap sequence (from the code, not verified).
 - **Not verified:** HDMI-CEC (turning the TV off and on from the cloud), the TV's own sleep timer (`attentive_timeout`), fixed or CEC-controlled volume, USB cameras (the MJPEG stream only looks for front and back cameras), Fire OS.
 
