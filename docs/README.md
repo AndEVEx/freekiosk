@@ -89,6 +89,7 @@ adb shell dpm set-device-owner com.freekiosk/.DeviceAdminReceiver
 | **REST API** | 40+ HTTP endpoints for device control | [Read →](rest-api.md) |
 | **MQTT** | Real-time telemetry and Home Assistant discovery | [Read →](MQTT.md) |
 | **ADB Configuration** | Headless provisioning and scripting | [Read →](adb-configuration.md) |
+| **Android TV** | Android TV, Google TV and Fire TV: what works, setup, limits | [Read →](android-tv.md) |
 
 ### Advanced Topics
 
