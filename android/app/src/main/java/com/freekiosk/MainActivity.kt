@@ -96,6 +96,7 @@ class MainActivity : ReactActivity() {
     val ADB_SIMPLE_KEYS = mapOf(
       "display_mode" to "@kiosk_display_mode",
       "media_player_cache" to "@kiosk_media_player_cache",
+      "media_player_unattended" to "@kiosk_media_player_unattended",
       "media_player_cache_limit_mb" to "@kiosk_media_player_cache_limit_mb",
       "auto_reload" to "@kiosk_auto_reload",
       "auto_relaunch" to "@kiosk_auto_relaunch_app",

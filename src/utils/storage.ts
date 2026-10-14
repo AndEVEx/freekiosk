@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { defaultMediaCacheEnabled } from './MediaCache';
+import { defaultMediaCacheEnabled, defaultMediaUnattended } from './MediaCache';
 import { BlockingRegion } from '../types/blockingOverlay';
 import { ScreenScheduleRule } from '../types/screenScheduler';
 import {
@@ -199,6 +199,7 @@ export const KEYS = {
   MEDIA_PLAYER_TRANSITION_DURATION: '@kiosk_media_player_transition_duration',
   MEDIA_PLAYER_MUTE: '@kiosk_media_player_mute',
   MEDIA_PLAYER_CACHE: '@kiosk_media_player_cache',
+  MEDIA_PLAYER_UNATTENDED: '@kiosk_media_player_unattended',
   MEDIA_PLAYER_CACHE_LIMIT_MB: '@kiosk_media_player_cache_limit_mb',
   // Legacy keys for backward compatibility
   SCREENSAVER_DELAY: '@screensaver_delay',
@@ -569,6 +570,7 @@ export const StorageService = {
         KEYS.MEDIA_PLAYER_TRANSITION_DURATION,
         KEYS.MEDIA_PLAYER_MUTE,
         KEYS.MEDIA_PLAYER_CACHE,
+        KEYS.MEDIA_PLAYER_UNATTENDED,
         KEYS.MEDIA_PLAYER_CACHE_LIMIT_MB,
         // Notifications
         KEYS.ALLOW_NOTIFICATIONS,
@@ -3408,6 +3410,24 @@ export const StorageService = {
     } catch (error) {
       console.error('Error getting media player cache:', error);
       return defaultMediaCacheEnabled();
+    }
+  },
+
+  saveMediaPlayerUnattended: async (value: boolean): Promise<void> => {
+    try {
+      await AsyncStorage.setItem(KEYS.MEDIA_PLAYER_UNATTENDED, JSON.stringify(value));
+    } catch (error) {
+      console.error('Error saving media player unattended:', error);
+    }
+  },
+
+  getMediaPlayerUnattended: async (): Promise<boolean> => {
+    try {
+      const value = await AsyncStorage.getItem(KEYS.MEDIA_PLAYER_UNATTENDED);
+      return value !== null ? JSON.parse(value) : defaultMediaUnattended();
+    } catch (error) {
+      console.error('Error getting media player unattended:', error);
+      return defaultMediaUnattended();
     }
   },
 

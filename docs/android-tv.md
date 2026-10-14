@@ -36,6 +36,15 @@ With **Settings > General > Playback > Play from the device (offline cache)** on
 
 Checked against a local test server (ETag, Range, faults), on a tablet emulator: a download cut at 3 MB resumes with `Range: bytes=...` and `If-Range` and ends **byte for byte identical** to the source; a file changed on the server during a resume is downloaded again whole, without mixing versions; a half download that is already complete (416) starts again; a 12 MB file is refused under a 5 MB limit while a small one is cached; an unchanged file gets a 304 and is not touched; a changed one is downloaded again; a removed file, a stray file and an orphan `.part` are deleted. Also: no cache folder and no call to the cache with the option off, playback from the cache with the network really cut, and the cache on by default on the Android TV emulator. **On the emulator, a connection closed by the server loses about one byte per 8,640 in the last ~170 KB before the close** (an emulator network artifact: the same file arrives intact when the server keeps the connection open); the size check refused such a download instead of accepting it. Not tested on a physical device, with a very large video, or on a full storage.
 
+## Unattended playback of the Media Player
+
+**Settings > General > Playback > Unattended playback** is for a screen nobody watches. **On by default on a TV, off everywhere else**, so a tablet plays exactly as before.
+
+- **No error text on screen.** The player used to show `Failed to load video: <URL>` on the wall, with the URL in clear (a signed URL carries its token). It now shows nothing and goes on to the next item after 3 seconds, as it did.
+- **An item that does not load, or whose video freezes, is skipped after 30 seconds.** Neither case fires an error event in the page, so without this the screen stayed on the dead item for good. A video counts as frozen when it has data but its position has not moved for 30 seconds while it should be playing; an item counts as not loading when it has no data after 30 seconds. An image is only watched while it loads.
+
+Checked on a tablet emulator against a local test server, with the setting off and then on: a 404 shows the message and the URL with the setting off and a black screen with it on; a server that accepts the request and never answers keeps the player on that item for good with the setting off, and with it on the player goes past it and loops; a first video whose stream stops after 300 KB stays frozen for 85 seconds with the setting off, and with it on the second video of the playlist is requested and played after about 40 seconds. Not covered: a playlist of one item whose server keeps the dead connection open (the player asks again, but the browser can hold the new request behind the old one until the connection ends), and nothing was tried on a real TV.
+
 ## What does not work yet
 
 - **Volume Up ×5 does not work on a TV.** On the emulators the volume keys never reach the app. Use Back ×5. The tap escape does not exist either (no touch).

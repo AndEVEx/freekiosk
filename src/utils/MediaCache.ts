@@ -75,6 +75,15 @@ export function defaultMediaCacheEnabled(): boolean {
   return Platform.isTV === true;
 }
 
+/**
+ * Unattended playback: nobody is there to read an error or to touch a frozen screen, so the
+ * player shows no error text and skips an item that does not load or freezes. On by default
+ * on a TV (a screen on a wall), off everywhere else, so a tablet plays exactly as before.
+ */
+export function defaultMediaUnattended(): boolean {
+  return Platform.isTV === true;
+}
+
 /** Largest the cache may grow, in megabytes, when nobody set a limit. */
 export const DEFAULT_MEDIA_CACHE_LIMIT_MB = 2048;
 

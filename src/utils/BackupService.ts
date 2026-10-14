@@ -171,6 +171,7 @@ const BACKUP_KEYS = [
   '@kiosk_media_player_items',
   '@kiosk_media_player_loop',
   '@kiosk_media_player_cache',
+  '@kiosk_media_player_unattended',
   '@kiosk_media_player_cache_limit_mb',
   '@kiosk_media_player_mute',
   '@kiosk_media_player_show_controls',

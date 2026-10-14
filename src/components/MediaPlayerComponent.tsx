@@ -29,6 +29,8 @@ interface MediaPlayerComponentProps {
   cacheOffline?: boolean;
   /** Largest the cache may grow, in megabytes */
   cacheLimitMb?: number;
+  /** No error text on screen, and an item that does not load or freezes is skipped */
+  unattended?: boolean;
   onUserInteraction?: (event?: { isTap?: boolean; x?: number; y?: number }) => void;
 }
 
@@ -46,6 +48,7 @@ const MediaPlayerComponent: React.FC<MediaPlayerComponentProps> = ({
   muteVideo,
   cacheOffline = false,
   cacheLimitMb,
+  unattended = false,
   onUserInteraction,
 }) => {
   const { t } = useTranslation();
@@ -69,8 +72,9 @@ const MediaPlayerComponent: React.FC<MediaPlayerComponentProps> = ({
       transitionEnabled,
       transitionDuration,
       muteVideo,
+      unattended,
     });
-  }, [items, autoPlay, loop, shuffle, imageDuration, showControls, fitMode, backgroundColor, transitionEnabled, transitionDuration, muteVideo]);
+  }, [items, autoPlay, loop, shuffle, imageDuration, showControls, fitMode, backgroundColor, transitionEnabled, transitionDuration, muteVideo, unattended]);
 
   const handleMessage = useCallback((event: any) => {
     try {
@@ -141,6 +145,7 @@ function generatePlayerHTML(settings: {
   transitionEnabled: boolean;
   transitionDuration: number;
   muteVideo: boolean;
+  unattended: boolean;
 }): string {
   const {
     items,
@@ -154,6 +159,7 @@ function generatePlayerHTML(settings: {
     transitionEnabled,
     transitionDuration,
     muteVideo,
+    unattended,
   } = settings;
 
   const itemsJSON = JSON.stringify(items.map(i => ({
@@ -315,7 +321,8 @@ function generatePlayerHTML(settings: {
     showControls: ${showControls},
     transitionEnabled: ${transitionEnabled},
     transitionDuration: ${transitionDuration},
-    muteVideo: ${muteVideo}
+    muteVideo: ${muteVideo},
+    unattended: ${unattended}
   };
   
   // DOM refs
@@ -341,6 +348,34 @@ function generatePlayerHTML(settings: {
   var controlsVisible = false;
   var shuffleOrder = [];
   var errorRetryTimer = null;
+  var guardTimer = null;
+  var GUARD_LIMIT_MS = 30000;
+  
+  // Unattended: an item that never loads, or whose video freezes, would hold the screen for
+  // good (no error event fires for either), so it is skipped after 30 seconds.
+  function guard(el) {
+    if (!SETTINGS.unattended) return;
+    if (guardTimer) clearInterval(guardTimer);
+    var isVideo = el.tagName === 'VIDEO';
+    var since = Date.now();
+    var lastTime = -1;
+    guardTimer = setInterval(function() {
+      var now = Date.now();
+      var ready = isVideo ? el.readyState >= 2 : (el.complete && el.naturalWidth > 0);
+      if (!ready) {
+        if (now - since > GUARD_LIMIT_MS) { clearInterval(guardTimer); guardTimer = null; advanceToNext(); }
+        return;
+      }
+      // An image is timer driven once it is shown; only a video can freeze
+      if (!isVideo) { clearInterval(guardTimer); guardTimer = null; return; }
+      if (!isPlaying || el.ended || el.currentTime !== lastTime) {
+        lastTime = el.currentTime;
+        since = now;
+        return;
+      }
+      if (now - since > GUARD_LIMIT_MS) { clearInterval(guardTimer); guardTimer = null; advanceToNext(); }
+    }, 2000);
+  }
   
   // Build shuffle order
   function buildShuffleOrder() {
@@ -363,7 +398,12 @@ function generatePlayerHTML(settings: {
   
   function showLoading() { loadingEl.className = 'loading-overlay show'; }
   function hideLoading() { loadingEl.className = 'loading-overlay'; }
-  function showError(msg) { errorMsg.textContent = msg; errorEl.className = 'error-overlay show'; }
+  // Unattended: nobody reads an error on a wall screen, and it carries the URL (and any token in it)
+  function showError(msg) {
+    if (SETTINGS.unattended) return;
+    errorMsg.textContent = msg;
+    errorEl.className = 'error-overlay show';
+  }
   function hideError() { errorEl.className = 'error-overlay'; }
   
   function updateControls() {
@@ -406,6 +446,7 @@ function generatePlayerHTML(settings: {
   function clearTimers() {
     if (imageTimer) { clearTimeout(imageTimer); imageTimer = null; }
     if (errorRetryTimer) { clearTimeout(errorRetryTimer); errorRetryTimer = null; }
+    if (guardTimer) { clearInterval(guardTimer); guardTimer = null; }
     stopProgress();
   }
   
@@ -491,6 +532,7 @@ function generatePlayerHTML(settings: {
     });
     
     slot.appendChild(video);
+    guard(video);
   }
   
   function loadImage(slot, item, realIdx) {
@@ -523,6 +565,7 @@ function generatePlayerHTML(settings: {
     });
     
     slot.appendChild(img);
+    guard(img);
   }
   
   function advanceToNext() {
@@ -656,6 +699,7 @@ function generatePlayerHTML(settings: {
       
       showLoading();
       slotA.appendChild(video);
+      guard(video);
     } else {
       var img = document.createElement('img');
       img.src = firstItem.url;
@@ -678,6 +722,7 @@ function generatePlayerHTML(settings: {
       
       showLoading();
       slotA.appendChild(img);
+      guard(img);
     }
     
     updateControls();

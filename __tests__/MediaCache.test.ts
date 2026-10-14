@@ -22,6 +22,7 @@ const {
   withCachedUrls,
   sameCacheMap,
   defaultMediaCacheEnabled,
+  defaultMediaUnattended,
   formatBytes,
   DEFAULT_MEDIA_CACHE_LIMIT_MB,
 } = require('../src/utils/MediaCache');
@@ -190,5 +191,40 @@ describe('formatBytes', () => {
 
   it('keeps the default limit at 2 GB', () => {
     expect(DEFAULT_MEDIA_CACHE_LIMIT_MB).toBe(2048);
+  });
+});
+
+describe('the unattended playback setting', () => {
+  const original = Platform.isTV;
+  const setTv = (value: boolean) => {
+    Object.defineProperty(Platform, 'isTV', { configurable: true, get: () => value });
+  };
+
+  beforeEach(async () => {
+    await store.clear();
+  });
+  afterEach(() => {
+    Object.defineProperty(Platform, 'isTV', { configurable: true, get: () => original });
+  });
+
+  it('is off by default on a tablet, so nothing changes there', async () => {
+    setTv(false);
+    expect(defaultMediaUnattended()).toBe(false);
+    expect(await StorageService.getMediaPlayerUnattended()).toBe(false);
+  });
+
+  it('is on by default on a TV', async () => {
+    setTv(true);
+    expect(defaultMediaUnattended()).toBe(true);
+    expect(await StorageService.getMediaPlayerUnattended()).toBe(true);
+  });
+
+  it('keeps what was chosen, on either kind of device', async () => {
+    setTv(true);
+    await StorageService.saveMediaPlayerUnattended(false);
+    expect(await StorageService.getMediaPlayerUnattended()).toBe(false);
+    setTv(false);
+    await StorageService.saveMediaPlayerUnattended(true);
+    expect(await StorageService.getMediaPlayerUnattended()).toBe(true);
   });
 });
