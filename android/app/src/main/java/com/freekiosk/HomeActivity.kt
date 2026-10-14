@@ -107,7 +107,7 @@ class HomeActivity : AppCompatActivity() {
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 }
             } else {
-                packageManager.getLaunchIntentForPackage(packageName)?.apply {
+                packageManager.launchIntentFor(packageName)?.apply {
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 }
             }

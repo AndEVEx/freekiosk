@@ -24,7 +24,7 @@ class AppLauncherModule(reactContext: ReactApplicationContext) : ReactContextBas
     fun launchExternalApp(packageName: String, promise: Promise) {
         try {
             val pm = reactApplicationContext.packageManager
-            val launchIntent = pm.getLaunchIntentForPackage(packageName)
+            val launchIntent = pm.launchIntentFor(packageName)
 
             if (launchIntent != null) {
                 launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -158,7 +158,7 @@ class AppLauncherModule(reactContext: ReactApplicationContext) : ReactContextBas
                 val appList = mutableListOf<WritableMap>()
                 for (packageInfo in packages) {
                     // Filter: only apps with launch intents (launchable apps)
-                    if (pm.getLaunchIntentForPackage(packageInfo.packageName) != null) {
+                    if (pm.launchIntentFor(packageInfo.packageName) != null) {
                         val appName = pm.getApplicationLabel(packageInfo).toString()
                         val appData = Arguments.createMap()
                         appData.putString("packageName", packageInfo.packageName)
@@ -199,7 +199,7 @@ class AppLauncherModule(reactContext: ReactApplicationContext) : ReactContextBas
 
                 val appList = mutableListOf<WritableMap>()
                 for (packageInfo in packages) {
-                    val hasLauncher = pm.getLaunchIntentForPackage(packageInfo.packageName) != null
+                    val hasLauncher = pm.launchIntentFor(packageInfo.packageName) != null
                     val isSystemApp = (packageInfo.flags and android.content.pm.ApplicationInfo.FLAG_SYSTEM) != 0
 
                     // Include apps that have a launcher activity OR are user-installed (non-system)
@@ -368,7 +368,7 @@ class AppLauncherModule(reactContext: ReactApplicationContext) : ReactContextBas
                 for (packageName in apps) {
                     try {
                         pm.getPackageInfo(packageName, 0)
-                        val launchIntent = pm.getLaunchIntentForPackage(packageName)
+                        val launchIntent = pm.launchIntentFor(packageName)
                         if (launchIntent != null) {
                             launchIntent.addFlags(
                                 Intent.FLAG_ACTIVITY_NEW_TASK or

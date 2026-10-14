@@ -446,7 +446,7 @@ class BootReceiver : BroadcastReceiver() {
                         continue
                     }
                     
-                    val launchIntent = pm.getLaunchIntentForPackage(packageName)
+                    val launchIntent = pm.launchIntentFor(packageName)
                     if (launchIntent != null) {
                         launchIntent.addFlags(
                             Intent.FLAG_ACTIVITY_NEW_TASK or

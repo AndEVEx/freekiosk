@@ -250,7 +250,7 @@ class BootLockActivity : Activity() {
                 val pkg = app.getString("packageName")
                 try {
                     pm.getPackageInfo(pkg, 0)
-                    val launchIntent = pm.getLaunchIntentForPackage(pkg) ?: continue
+                    val launchIntent = pm.launchIntentFor(pkg) ?: continue
                     launchIntent.addFlags(
                         Intent.FLAG_ACTIVITY_NEW_TASK or
                         Intent.FLAG_ACTIVITY_NO_ANIMATION

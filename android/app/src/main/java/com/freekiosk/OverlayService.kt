@@ -1542,7 +1542,7 @@ class OverlayService : Service() {
         if (targetPackage != null) {
             try {
                 android.util.Log.i("OverlayService", "Relaunching external app directly: $targetPackage")
-                val launchIntent = packageManager.getLaunchIntentForPackage(targetPackage)
+                val launchIntent = packageManager.launchIntentFor(targetPackage)
                 if (launchIntent != null) {
                     launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     startActivity(launchIntent)
