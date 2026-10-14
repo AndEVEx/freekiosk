@@ -107,6 +107,8 @@ class SystemInfoModule(reactContext: ReactApplicationContext) : ReactContextBase
             batteryInfo.putBoolean("isCharging", false)
         }
 
+        // False on a TV or a box: the status bar then hides the battery instead of showing a made-up level
+        batteryInfo.putBoolean("present", TvSupport.hasBattery(reactApplicationContext))
         return batteryInfo
     }
 
@@ -247,6 +249,7 @@ class SystemInfoModule(reactContext: ReactApplicationContext) : ReactContextBase
                 connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI)?.isConnected == true
             }
             wifiInfo.putBoolean("isConnected", isConnected)
+            wifiInfo.putBoolean("ethernet", capabilities?.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) == true)
 
             if (isConnected) {
                 // API 31+: use transportInfo from NetworkCapabilities — connectionInfo returns <unknown ssid> on Android 12+

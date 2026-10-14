@@ -13,6 +13,8 @@ export interface BatteryStatus {
   level: number;
   charging: boolean;
   plugged: 'usb' | 'ac' | 'wireless' | 'none';
+  /** False on a device with no battery (a TV or a box); level and charging are then meaningless. */
+  present: boolean;
 }
 
 export interface ScreenStatus {
@@ -46,6 +48,8 @@ export interface WifiStatus {
   ssid: string;
   signalStrength: number;
   connected: boolean;
+  /** True when the active network is Ethernet (a TV box often has no Wi-Fi). */
+  ethernet?: boolean;
 }
 
 /**
@@ -163,12 +167,13 @@ class DeviceControlServiceClass {
           level: status.level || 0,
           charging: status.charging || false,
           plugged: status.plugged || 'none',
+          present: status.present !== false,
         };
       }
     } catch (error) {
       console.warn('DeviceControlService: getBatteryStatus error', error);
     }
-    return { level: 0, charging: false, plugged: 'none' };
+    return { level: 0, charging: false, plugged: 'none', present: true };
   }
 
   async getScreenStatus(): Promise<ScreenStatus> {
@@ -267,6 +272,7 @@ class DeviceControlServiceClass {
           ssid: info.ssid || '',
           signalStrength: info.rssi || 0,
           connected: info.connected || false,
+          ethernet: info.ethernet || false,
         };
       }
     } catch (error) {

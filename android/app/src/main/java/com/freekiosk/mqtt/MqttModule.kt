@@ -824,6 +824,7 @@ class MqttModule(private val reactContext: ReactApplicationContext) :
             put("voltage", voltage)
             put("health", healthStr)
             put("technology", technology)
+            put("present", batteryIntent?.getBooleanExtra(BatteryManager.EXTRA_PRESENT, true) ?: true)
         }
     }
 

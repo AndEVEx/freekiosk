@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { View, Text, TouchableOpacity, Alert, StyleSheet } from 'react-native';
+import { View, Text, Alert, StyleSheet, Platform, TouchableOpacity } from 'react-native';
 import Icon from '../../../components/Icon';
 import {
   SettingsSection,
@@ -272,7 +272,8 @@ const DisplayTab: React.FC<DisplayTabProps> = ({
   return (
     <View>
       {/* App Brightness Control toggle - WebView mode only (external app mode doesn't manage brightness) */}
-      {displayMode !== 'external_app' && (
+      {/* A TV has no backlight to control: brightness settings would do nothing */}
+      {!Platform.isTV && displayMode !== 'external_app' && (
         <SettingsSection title={t('display.brightness.title')} icon="brightness-6">
           <SettingsSwitch
             label={t('display.brightness.appControl')}
@@ -293,7 +294,7 @@ const DisplayTab: React.FC<DisplayTabProps> = ({
       )}
 
       {/* Default Brightness - Only in WebView mode and when app manages brightness */}
-      {displayMode !== 'external_app' && brightnessManagementEnabled && (
+      {!Platform.isTV && displayMode !== 'external_app' && brightnessManagementEnabled && (
         <SettingsSection title={t('display.manualBrightness.title')} icon="brightness-6">
           <SettingsSlider
             label=""
@@ -318,7 +319,7 @@ const DisplayTab: React.FC<DisplayTabProps> = ({
       )}
 
       {/* Auto-Brightness - WebView only, and only when app manages brightness */}
-      {displayMode !== 'external_app' && brightnessManagementEnabled && (
+      {!Platform.isTV && displayMode !== 'external_app' && brightnessManagementEnabled && (
         <SettingsSection title={t('display.autoBrightness.title')} icon="brightness-auto">
           <SettingsSwitch
             label={t('display.autoBrightness.enable')}

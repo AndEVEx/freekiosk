@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { View, Text, Switch, StyleSheet, ViewStyle } from 'react-native';
+import { View, Text, Switch, StyleSheet, ViewStyle, Platform, TouchableOpacity } from 'react-native';
 import { Colors, Spacing, Typography } from '../../theme';
 import Icon, { IconName } from '../Icon';
 
@@ -27,8 +27,14 @@ const SettingsSwitch: React.FC<SettingsSwitchProps> = ({
   disabled = false,
   style,
 }) => {
+  // On a TV the whole row is the focus target: OK toggles it and the outline shows where
+  // the focus is. The native switch inside would be a second, invisible focus stop.
+  const Container: React.ElementType = Platform.isTV ? TouchableOpacity : View;
+  const containerProps = Platform.isTV
+    ? { onPress: () => onValueChange(!value), disabled, activeOpacity: 0.8 }
+    : {};
   return (
-    <View style={[styles.container, style]}>
+    <Container style={[styles.container, Platform.isTV && styles.tvRow, style]} {...containerProps}>
       <View style={styles.textContainer}>
         <View style={styles.labelRow}>
           {icon && <Icon name={icon} size={18} color={disabled ? Colors.textDisabled : Colors.textSecondary} style={styles.icon} />}
@@ -40,14 +46,21 @@ const SettingsSwitch: React.FC<SettingsSwitchProps> = ({
         value={value}
         onValueChange={onValueChange}
         disabled={disabled}
+        focusable={!Platform.isTV}
+        pointerEvents={Platform.isTV ? 'none' : 'auto'}
         trackColor={{ false: Colors.switchTrackOff, true: Colors.switchTrackOn }}
         thumbColor={value ? Colors.primary : Colors.switchThumbOff}
       />
-    </View>
+    </Container>
   );
 };
 
 const styles = StyleSheet.create({
+  // Room for the focus outline, which is drawn over the row's own edge
+  tvRow: {
+    paddingHorizontal: Spacing.sm,
+    borderRadius: 8,
+  },
   container: {
     flexDirection: 'row',
     alignItems: 'center',

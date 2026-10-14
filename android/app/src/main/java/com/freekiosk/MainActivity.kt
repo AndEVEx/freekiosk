@@ -247,6 +247,8 @@ class MainActivity : ReactActivity() {
     super.onCreate(null)
     hasStarted = true  // #222: tells BootLockActivity the hand-off really happened
 
+    installTvFocusRing()
+
     // Keep screen always on
     window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
@@ -1109,6 +1111,35 @@ class MainActivity : ReactActivity() {
         or View.SYSTEM_UI_FLAG_FULLSCREEN
         or View.SYSTEM_UI_FLAG_LOW_PROFILE  // Cache les contrôles système (menu Samsung)
       )
+    }
+  }
+
+  // ===== Android TV: visible focus =====
+  // React Native emits no focus event for a plain view on Android, so the JS side cannot draw
+  // the focus itself. The remote moves the focus around, and without an outline nothing says
+  // what a press of OK will hit. This draws one over whichever view has the focus: a
+  // foreground stroke, put back as it was when the focus leaves. Text inputs draw their own
+  // (SettingsInput) and the WebView is left alone, a page does its own focus styling.
+  // Same colour as TV_FOCUS_COLOR in src/components/tv/tvFocus.ts.
+  private var ringedView: View? = null
+  private var ringedPreviousForeground: android.graphics.drawable.Drawable? = null
+
+  private fun installTvFocusRing() {
+    if (!isTelevision) return
+    val density = resources.displayMetrics.density
+    window.decorView.viewTreeObserver.addOnGlobalFocusChangeListener { _, newFocus ->
+      ringedView?.foreground = ringedPreviousForeground
+      ringedView = null
+      ringedPreviousForeground = null
+      if (newFocus == null || newFocus is android.widget.EditText ||
+          newFocus.javaClass.name.contains("WebView")) return@addOnGlobalFocusChangeListener
+      ringedPreviousForeground = newFocus.foreground
+      ringedView = newFocus
+      newFocus.foreground = android.graphics.drawable.GradientDrawable().apply {
+        setColor(android.graphics.Color.TRANSPARENT)
+        setStroke((4 * density).toInt(), 0xFFFFB300.toInt())
+        cornerRadius = 8 * density
+      }
     }
   }
 

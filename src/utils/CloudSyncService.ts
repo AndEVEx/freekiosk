@@ -213,13 +213,15 @@ class CloudSyncServiceClass {
         // after enrollment is reflected in the dashboard on the next tick.
         const capabilities = await getCapabilities().catch(() => [] as string[]);
         telemetry = {
-          battery: {
-            level: status.battery.level,
-            charging: status.battery.charging,
-          },
+          // No battery key on a TV or a box: the cloud keeps it empty instead of storing
+          // a made-up level and raising a battery alert
+          ...(status.battery.present
+            ? { battery: { level: status.battery.level, charging: status.battery.charging } }
+            : {}),
           network: {
             wifi_ssid: status.wifi.ssid,
             wifi_signal_dbm: status.wifi.signalStrength,
+            ethernet_connected: status.wifi.ethernet ?? false,
             ip_address: status.device.ip,
             // Cellular, reported next to WiFi so a tablet on mobile data is not a
             // blank row in the dashboard. network_type and signal_dbm are empty

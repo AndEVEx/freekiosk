@@ -729,7 +729,8 @@ class OverlayService : Service() {
             batteryContainer.addView(batteryText)
             
             // Ajouter la batterie seulement si activée
-            if (showBattery) {
+            // No battery on a TV or a box: showing one would be a made-up level
+            if (showBattery && TvSupport.hasBattery(this)) {
                 statusLayout.addView(batteryContainer)
             }
 

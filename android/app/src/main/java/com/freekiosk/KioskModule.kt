@@ -224,12 +224,14 @@ class KioskModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
     @ReactMethod
     fun acquireCloudWakeLock(promise: Promise) {
         try {
+            // The Wi-Fi lock is optional: a box that is Ethernet-only has no Wi-Fi service, and
+            // that must not stop the CPU wake lock below from being taken.
             if (cloudWifiLock?.isHeld != true) {
                 val wifiManager = reactApplicationContext.applicationContext
-                    .getSystemService(Context.WIFI_SERVICE) as WifiManager
-                cloudWifiLock = wifiManager.createWifiLock(
+                    .getSystemService(Context.WIFI_SERVICE) as? WifiManager
+                cloudWifiLock = wifiManager?.createWifiLock(
                     WifiManager.WIFI_MODE_FULL_HIGH_PERF, "FreeKiosk:CloudSync"
-                ).also { it.acquire() }
+                )?.also { it.acquire() }
             }
             if (cloudCpuWakeLock?.isHeld != true) {
                 val powerManager = reactApplicationContext
@@ -1931,6 +1933,7 @@ class KioskModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
             map.putBoolean("charging", isCharging)
             map.putString("plugged", pluggedType)
             map.putDouble("temperature", temperature)
+            map.putBoolean("present", batteryIntent?.getBooleanExtra(BatteryManager.EXTRA_PRESENT, true) ?: true)
             promise.resolve(map)
         } catch (e: Exception) {
             val map = Arguments.createMap()
@@ -1968,6 +1971,8 @@ class KioskModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
             map.putString("ssid", ssid)
             map.putInt("rssi", rssi)
             map.putBoolean("connected", isConnected)
+            // A TV box is often on Ethernet only: Wi-Fi then reads as disconnected while the device is online
+            map.putBoolean("ethernet", capabilities?.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) == true)
             map.putString("ipAddress", getIpAddress())
             promise.resolve(map)
         } catch (e: Exception) {

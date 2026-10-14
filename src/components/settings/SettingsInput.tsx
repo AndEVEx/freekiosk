@@ -3,10 +3,11 @@
  * A text input with label and validation
  */
 
-import React from 'react';
-import { View, Text, TextInput, StyleSheet, ViewStyle, KeyboardTypeOptions } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TextInput, StyleSheet, ViewStyle, KeyboardTypeOptions, Platform } from 'react-native';
 import { Colors, Spacing, Typography } from '../../theme';
 import Icon, { IconName } from '../Icon';
+import { TV_FOCUS_COLOR } from '../tv/tvFocus';
 
 interface SettingsInputProps {
   label: string;
@@ -52,6 +53,9 @@ const SettingsInput: React.FC<SettingsInputProps> = ({
   onBlur,
   onFocus,
 }) => {
+  // On a TV the remote moves the focus between fields; without this outline there is no
+  // way to tell which field a key press will type into.
+  const [focused, setFocused] = useState(false);
   return (
     <View style={[styles.container, style]}>
       <View style={styles.labelRow}>
@@ -64,6 +68,7 @@ const SettingsInput: React.FC<SettingsInputProps> = ({
           styles.input,
           disabled && styles.inputDisabled,
           error && styles.inputError,
+          Platform.isTV && focused && styles.inputTvFocused,
           multiline && styles.inputMultiline,
           inputStyle,
         ]}
@@ -77,8 +82,8 @@ const SettingsInput: React.FC<SettingsInputProps> = ({
         maxLength={maxLength}
         editable={!disabled}
         multiline={multiline}
-        onBlur={onBlur}
-        onFocus={onFocus}
+        onBlur={() => { setFocused(false); onBlur?.(); }}
+        onFocus={() => { setFocused(true); onFocus?.(); }}
         cursorColor={Colors.primary}
         selectionColor={Colors.primaryLight}
         caretHidden={false}
@@ -132,6 +137,10 @@ const styles = StyleSheet.create({
   inputError: {
     borderColor: Colors.error,
     borderWidth: 2,
+  },
+  inputTvFocused: {
+    borderColor: TV_FOCUS_COLOR,
+    borderWidth: 4,
   },
   inputMultiline: {
     height: 100,

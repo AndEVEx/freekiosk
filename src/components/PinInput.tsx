@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, NativeModules } from 'react-native';
+import { View, Text, TextInput, StyleSheet, Alert, ActivityIndicator, NativeModules, Platform, TouchableOpacity } from 'react-native';
 import { verifySecurePin, getLockoutStatus, hasSecurePin } from '../utils/secureStorage';
 import { StorageService } from '../utils/storage';
 import WifiDialog from './WifiDialog';
@@ -72,9 +72,10 @@ const PinInput: React.FC<PinInputProps> = ({ onSuccess }) => {
     setShowBluetoothButton(controlsEnabled && bluetooth);
     setShowAudioControls(controlsEnabled && audio);
     setShowEmergencyButton(controlsEnabled && emergency);
-    setShowFlashlightButton(controlsEnabled && flashlight);
-    setShowBrightnessButton(controlsEnabled && brightness);
-    setShowRotationLockButton(controlsEnabled && rotationLock);
+    // Brightness, rotation and torch do nothing on a TV: no backlight, no sensor, no LED
+    setShowFlashlightButton(controlsEnabled && flashlight && !Platform.isTV);
+    setShowBrightnessButton(controlsEnabled && brightness && !Platform.isTV);
+    setShowRotationLockButton(controlsEnabled && rotationLock && !Platform.isTV);
 
     if (controlsEnabled && flashlight && FlashlightModule?.isAvailable) {
       try {
@@ -312,6 +313,8 @@ const PinInput: React.FC<PinInputProps> = ({ onSuccess }) => {
             textContentType="none"
             importantForAutofill="no"
             editable={!isLoading && !isLockedOut}
+            returnKeyType="done"
+            onSubmitEditing={handleSubmit}
           />
 
           <TouchableOpacity

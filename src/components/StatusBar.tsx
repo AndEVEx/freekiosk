@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, NativeModules } from 'react-native';
+import { View, Text, StyleSheet, NativeModules, TouchableOpacity } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
 const { SystemInfoModule } = NativeModules;
@@ -8,8 +8,10 @@ interface SystemInfo {
   battery: {
     level: number;
     isCharging: boolean;
+    present?: boolean;
   };
   wifi: {
+    ethernet?: boolean;
     isConnected: boolean;
   };
   cellular?: {
@@ -119,7 +121,8 @@ const StatusBar: React.FC<StatusBarProps> = ({
   // Safe accessors with defaults (systemInfo can be null when only dashboardMode is active)
   const batteryLevel = systemInfo?.battery?.level ?? 0;
   const isCharging = systemInfo?.battery?.isCharging ?? false;
-  const wifiConnected = systemInfo?.wifi?.isConnected ?? false;
+  // A box on Ethernet is online even though its Wi-Fi reads as disconnected
+  const wifiConnected = (systemInfo?.wifi?.isConnected ?? false) || (systemInfo?.wifi?.ethernet ?? false);
   const cellularConnected = systemInfo?.cellular?.isConnected ?? false;
   const airplaneMode = systemInfo?.cellular?.airplaneMode ?? false;
   // networkType is '' on any build without READ_PHONE_STATE (every Play Store build),
@@ -186,8 +189,8 @@ const StatusBar: React.FC<StatusBarProps> = ({
   const leftItems = [];
   const rightItems = [];
 
-  // Battery - left side
-  if (showBattery) {
+  // Battery - left side (hidden on a TV or a box, which has none)
+  if (showBattery && systemInfo?.battery?.present !== false) {
     leftItems.push(
       <View key="battery" style={styles.item}>
         <MaterialCommunityIcons

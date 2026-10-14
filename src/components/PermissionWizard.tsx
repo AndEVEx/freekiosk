@@ -23,8 +23,8 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
+  TouchableOpacity,
 } from 'react-native';
 
 import KioskModule from '../utils/KioskModule';
@@ -132,6 +132,10 @@ const ITEMS: PermItem[] = [
   },
 ];
 
+// A TV has no camera to scan with and no battery-optimisation screen (it does not exist in
+// the TV Settings app), so asking for them would be a step that can never be completed.
+const VISIBLE_ITEMS = ITEMS.filter(i => !(Platform.isTV && (i.key === 'camera' || i.key === 'battery')));
+
 export default function PermissionWizard({ visible, onClose }: Props) {
   const { t } = useTranslation();
   const [isDeviceOwner, setIsDeviceOwner] = useState(false);
@@ -148,7 +152,7 @@ export default function PermissionWizard({ visible, onClose }: Props) {
     const dor = await safeBool(KioskModule?.isDeviceOwner());
     setIsDeviceOwner(dor);
     const entries = await Promise.all(
-      ITEMS.map(async item => [item.key, await item.check(dor)] as const),
+      VISIBLE_ITEMS.map(async item => [item.key, await item.check(dor)] as const),
     );
     setStatuses(Object.fromEntries(entries) as Record<ItemKey, boolean>);
     setLoading(false);
@@ -186,7 +190,7 @@ export default function PermissionWizard({ visible, onClose }: Props) {
     onClose();
   }, [onClose]);
 
-  const grantedCount = ITEMS.filter(i => statuses[i.key]).length;
+  const grantedCount = VISIBLE_ITEMS.filter(i => statuses[i.key]).length;
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={handleClose}>
@@ -208,7 +212,7 @@ export default function PermissionWizard({ visible, onClose }: Props) {
         </View>
 
         <ScrollView contentContainerStyle={styles.list}>
-          {ITEMS.map(item => {
+          {VISIBLE_ITEMS.map(item => {
             const granted = statuses[item.key];
             return (
               <View key={item.key} style={styles.row}>
@@ -234,7 +238,7 @@ export default function PermissionWizard({ visible, onClose }: Props) {
 
         <View style={styles.footer}>
           <Text style={styles.progress}>
-            {loading ? t('components.permissionWizard.checking') : t('components.permissionWizard.grantedCount', { granted: grantedCount, total: ITEMS.length })}
+            {loading ? t('components.permissionWizard.checking') : t('components.permissionWizard.grantedCount', { granted: grantedCount, total: VISIBLE_ITEMS.length })}
           </Text>
           <TouchableOpacity style={styles.doneBtn} onPress={handleClose}>
             <Text style={styles.doneBtnText}>{t('components.permissionWizard.done')}</Text>
