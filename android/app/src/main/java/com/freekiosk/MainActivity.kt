@@ -880,7 +880,7 @@ class MainActivity : ReactActivity() {
       if (targetPkg != null) {
         DebugLog.d("MainActivity", "External app mode involuntary return — relaunching $targetPkg directly")
         try {
-          val launchIntent = packageManager.getLaunchIntentForPackage(targetPkg)
+          val launchIntent = packageManager.launchIntentFor(targetPkg)
           if (launchIntent != null) {
             launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             // Restart OverlayService BEFORE launching 24Six so the button is present
@@ -1110,6 +1110,34 @@ class MainActivity : ReactActivity() {
         or View.SYSTEM_UI_FLAG_LOW_PROFILE  // Cache les contrôles système (menu Samsung)
       )
     }
+  }
+
+  // ===== Android TV: Back x5 opens the PIN screen =====
+  // On a TV there is no touch, and the volume keys never reach the app (the system handles
+  // them), so neither the tap escape nor Volume Up x5 exists. Back is on every remote and is
+  // otherwise swallowed on the kiosk screen, so five presses in a row cost nothing. The PIN
+  // is still asked, so a stray sequence opens nothing.
+  private val isTelevision: Boolean by lazy { TvSupport.isTelevision(this) }
+  private var remoteBackCount = 0
+  private var remoteBackLastTime = 0L
+  private val remoteBackTimeout = 2000L
+
+  override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+    if (isTelevision && kioskScreenActive && event.keyCode == KeyEvent.KEYCODE_BACK &&
+        event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) {
+      val now = System.currentTimeMillis()
+      if (now - remoteBackLastTime > remoteBackTimeout) remoteBackCount = 0
+      remoteBackCount++
+      remoteBackLastTime = now
+      if (remoteBackCount >= 5) {
+        remoteBackCount = 0
+        android.util.Log.d("MainActivity", "Back x5 detected on TV! Navigating to PIN")
+        blockAutoRelaunch = true
+        Handler(Looper.getMainLooper()).postDelayed({ sendNavigateToPinEvent() }, 100)
+        return true
+      }
+    }
+    return super.dispatchKeyEvent(event)
   }
 
   // Volume Up 5-tap tracking

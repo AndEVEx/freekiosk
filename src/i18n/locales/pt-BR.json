@@ -702,7 +702,7 @@
       "confirm": "Reiniciar sessão"
     },
     "cloudPromo": {
-      "title": "Gerencie seus tablets pelo FreeKiosk Cloud",
+      "title": "Gerencie seus dispositivos pelo FreeKiosk Cloud",
       "body": "Configurações remotas, comandos e visão geral da frota.",
       "connect": "Conectar",
       "dismiss": "Fechar"
@@ -1230,14 +1230,15 @@
       "startConfiguration": "Começar a configuração",
       "supportOnGithub": "Apoie-nos no GitHub",
       "tapHint": "Dica: toque 5× em qualquer lugar da tela para acessar as configurações",
+      "tapHintTv": "Dica: pressione Voltar 5× no controle remoto para acessar as configurações",
       "footerVersion": "Versão {{version}} • por Rushb",
       "footerByRushb": "por Rushb",
       "provisioningEnrolling": "Conectando ao FreeKiosk Cloud… (tentativa {{attempts}})",
       "provisioningRetrying": "Ainda não foi possível acessar o FreeKiosk Cloud. Tentando de novo a cada 30 segundos (tentativa {{attempts}}).",
       "provisioningFailed": "Falha no registro na nuvem: {{error}}. Digite um novo token em Configurações > Nuvem.",
-      "cloudTitle": "Gerencie seus tablets com o FreeKiosk Cloud",
+      "cloudTitle": "Gerencie seus dispositivos com o FreeKiosk Cloud",
       "cloudText": "Altere configurações, envie comandos e acompanhe toda a sua frota em um único painel.",
-      "cloudConnect": "Conectar este tablet",
+      "cloudConnect": "Conectar este dispositivo",
       "cloudDiscover": "Conhecer a nuvem"
     },
     "mediaPlayer": {
@@ -1330,6 +1331,10 @@
       "tip3": "As regiões podem se sobrepor. O botão de retorno sempre fica acessível acima das sobreposições de bloqueio."
     },
     "settingsMain": {
+      "exitTitle": "Sair das configurações?",
+      "exitMessage": "As alterações não salvas serão perdidas.",
+      "exitStay": "Ficar",
+      "exitDiscard": "Sair sem salvar",
       "pickMediaError": "Não foi possível escolher a mídia: {{error}}",
       "error": "Erro",
       "unableToLoadApps": "Não foi possível carregar os apps: {{error}}",

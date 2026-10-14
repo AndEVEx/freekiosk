@@ -11,6 +11,7 @@ import {
   TouchableOpacity,
   NativeModules,
   Alert,
+  Platform,
   Linking,
   FlatList,
   Modal,
@@ -357,10 +358,29 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation, route })
   // Block Android back gesture/button on Settings screen to prevent PIN bypass (#93)
   useEffect(() => {
     const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
-      // Prevent back navigation — user must use Save or explicit back-to-kiosk buttons
+      // Prevent back navigation — user must use Save or explicit back-to-kiosk buttons.
+      // On a TV the remote has no other way out, so Back offers to leave without saving.
+      if (Platform.isTV) {
+        Alert.alert(
+          t('screens.settingsMain.exitTitle'),
+          t('screens.settingsMain.exitMessage'),
+          [
+            { text: t('screens.settingsMain.exitStay'), style: 'cancel' },
+            {
+              text: t('screens.settingsMain.exitDiscard'),
+              style: 'destructive',
+              onPress: () => {
+                revokeSettingsAccess();
+                navigation.reset({ index: 0, routes: [{ name: 'Kiosk' }] });
+              },
+            },
+          ],
+        );
+      }
       return true;
     });
     return () => backHandler.remove();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // AUTH GATE: Verify that PIN was actually entered before allowing access (#93).

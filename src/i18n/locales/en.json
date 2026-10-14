@@ -702,7 +702,7 @@
       "confirm": "Reset session"
     },
     "cloudPromo": {
-      "title": "Manage your tablets from FreeKiosk Cloud",
+      "title": "Manage your devices from FreeKiosk Cloud",
       "body": "Remote settings, commands and fleet overview.",
       "connect": "Connect",
       "dismiss": "Close"
@@ -1230,14 +1230,15 @@
       "startConfiguration": "Start Configuration",
       "supportOnGithub": "Support us on GitHub",
       "tapHint": "Tip: Tap 5× anywhere on the screen to access settings",
+      "tapHintTv": "Tip: Press Back 5× on the remote to access settings",
       "footerVersion": "Version {{version}} • by Rushb",
       "footerByRushb": "by Rushb",
       "provisioningEnrolling": "Connecting to FreeKiosk Cloud… (attempt {{attempts}})",
       "provisioningRetrying": "Cannot reach FreeKiosk Cloud yet. Retrying every 30 seconds (attempt {{attempts}}).",
       "provisioningFailed": "Cloud enrollment failed: {{error}}. Enter a new token in Settings > Cloud.",
-      "cloudTitle": "Manage your tablets with FreeKiosk Cloud",
+      "cloudTitle": "Manage your devices with FreeKiosk Cloud",
       "cloudText": "Change settings, send commands and watch your whole fleet from one dashboard.",
-      "cloudConnect": "Connect this tablet",
+      "cloudConnect": "Connect this device",
       "cloudDiscover": "Discover the cloud"
     },
     "mediaPlayer": {
@@ -1330,6 +1331,10 @@
       "tip3": "Regions can overlap. The return button will always stay accessible above blocking overlays."
     },
     "settingsMain": {
+      "exitTitle": "Leave settings?",
+      "exitMessage": "Changes that were not saved will be lost.",
+      "exitStay": "Stay",
+      "exitDiscard": "Leave without saving",
       "pickMediaError": "Failed to pick media: {{error}}",
       "error": "Error",
       "unableToLoadApps": "Unable to load apps: {{error}}",

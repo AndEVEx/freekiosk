@@ -702,7 +702,7 @@
       "confirm": "Réinitialiser la session"
     },
     "cloudPromo": {
-      "title": "Gérez vos tablettes depuis FreeKiosk Cloud",
+      "title": "Gérez vos appareils depuis FreeKiosk Cloud",
       "body": "Réglages à distance, commandes et vue d'ensemble de la flotte.",
       "connect": "Connecter",
       "dismiss": "Fermer"
@@ -1230,14 +1230,15 @@
       "startConfiguration": "Démarrer la configuration",
       "supportOnGithub": "Soutenez-nous sur GitHub",
       "tapHint": "Astuce : appuyez 5× n'importe où sur l'écran pour accéder aux réglages",
+      "tapHintTv": "Astuce : appuyez 5× sur Retour de la télécommande pour accéder aux réglages",
       "footerVersion": "Version {{version}} • par Rushb",
       "footerByRushb": "par Rushb",
       "provisioningEnrolling": "Connexion à FreeKiosk Cloud… (tentative {{attempts}})",
       "provisioningRetrying": "FreeKiosk Cloud est injoignable pour le moment. Nouvel essai toutes les 30 secondes (tentative {{attempts}}).",
       "provisioningFailed": "Échec de l'enrôlement cloud : {{error}}. Saisissez un nouveau jeton dans Réglages > Cloud.",
-      "cloudTitle": "Gérez vos tablettes avec FreeKiosk Cloud",
+      "cloudTitle": "Gérez vos appareils avec FreeKiosk Cloud",
       "cloudText": "Modifiez les réglages, envoyez des commandes et suivez toute votre flotte depuis un seul tableau de bord.",
-      "cloudConnect": "Connecter cette tablette",
+      "cloudConnect": "Connecter cet appareil",
       "cloudDiscover": "Découvrir le cloud"
     },
     "mediaPlayer": {
@@ -1330,6 +1331,10 @@
       "tip3": "Les zones peuvent se chevaucher. Le bouton retour reste toujours accessible au-dessus des zones de blocage."
     },
     "settingsMain": {
+      "exitTitle": "Quitter les réglages ?",
+      "exitMessage": "Les modifications non enregistrées seront perdues.",
+      "exitStay": "Rester",
+      "exitDiscard": "Quitter sans enregistrer",
       "pickMediaError": "Échec de la sélection du média : {{error}}",
       "error": "Erreur",
       "unableToLoadApps": "Impossible de charger les applications : {{error}}",

@@ -12,6 +12,7 @@ import {
   NativeModules,
   findNodeHandle,
   DeviceEventEmitter,
+  Platform,
 } from 'react-native';
 
 const { HttpServerModule } = NativeModules;
@@ -523,6 +524,19 @@ const WebViewComponent = forwardRef<WebViewComponentRef, WebViewComponentProps>(
       }
     }, true);
     
+    // A mouse click fires no touch event, so a mouse (USB or Bluetooth, typically on an
+    // Android TV) would never count toward the tap sequence. pointerType tells the two
+    // apart, so a touch is not counted twice.
+    document.addEventListener('pointerup', function(e) {
+      if (e.pointerType === 'mouse' && e.button === 0) {
+        window.ReactNativeWebView.postMessage(JSON.stringify({
+          type: 'FIVE_TAP_CLICK',
+          x: e.clientX,
+          y: e.clientY
+        }));
+      }
+    }, true);
+
     // Click handler for desktop/fallback - Also send user-interaction for screensaver reset
     document.addEventListener('click', function(e) {
       sendInteraction();
@@ -1242,7 +1256,7 @@ const WebViewComponent = forwardRef<WebViewComponentRef, WebViewComponentProps>(
             {/* Hint */}
             <View style={styles.hintContainer}>
               <Text style={styles.hintText}>
-                {t('components.webView.tapHint')}
+                {t(Platform.isTV ? 'components.webView.tapHintTv' : 'components.webView.tapHint')}
               </Text>
             </View>
 
