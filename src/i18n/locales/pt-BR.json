@@ -449,6 +449,8 @@
       "launchOnBoot": "Abrir ao ligar",
       "launchOnBootHint": "Abrir o FreeKiosk automaticamente quando o dispositivo for ligado",
       "appearOnTopInfo": "Verifique se a permissão \"Sobrepor a outros apps\" está ativada nas configurações do sistema para uma abertura automática confiável.",
+      "tvBootBlocked": "Sem \"Exibir sobre outros apps\", o Android impede o FreeKiosk de iniciar na inicialização desta TV: após uma queda de energia, a tela inicial da TV permanece e nada é reproduzido. Esta TV não tem tela para conceder a permissão. A partir de um computador, uma única vez:",
+      "tvBootGranted": "\"Exibir sobre outros apps\" está concedido: o FreeKiosk pode iniciar na inicialização.",
       "openSystemSettings": "Abrir configurações do sistema",
       "screenLockCompat": "Compatibilidade com o bloqueio de tela do sistema",
       "screenLockCompatHint": "Ative SOMENTE se você definiu um bloqueio de tela nativo do Android (PIN/senha) neste dispositivo. O FreeKiosk então (1) dá lugar à tela de bloqueio segura ao ligar em vez de bloquear imediatamente — evitando o travamento na reinicialização causado pelo conflito entre o quiosque e a tela de bloqueio segura — e (2) mantém o keyguard do sistema ativo enquanto fixado, para que o bloqueio de tela realmente peça a senha depois que a tela desligar e ligar de novo (sem isso, o modo de tarefa bloqueada desativa o keyguard e a senha nunca aparece). Um bloqueio de tela do sistema significa que alguém precisa digitar a senha no dispositivo depois de cada reinicialização antes de o quiosque abrir, e a cada despertar — inadequado para dispositivos sem supervisão. Para a segurança do dispositivo, o PIN de saída do FreeKiosk + Device Owner costuma ser a melhor escolha.",

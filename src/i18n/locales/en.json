@@ -449,6 +449,8 @@
       "launchOnBoot": "Launch on Boot",
       "launchOnBootHint": "Automatically launch FreeKiosk when the device starts",
       "appearOnTopInfo": "Make sure \"Appear on top\" permission is enabled in system settings for reliable auto-launch.",
+      "tvBootBlocked": "Without \"Display over other apps\", Android stops FreeKiosk from starting at boot on this TV: after a power cut, the TV home screen stays and nothing plays. This TV has no screen to grant it from. From a computer, once:",
+      "tvBootGranted": "\"Display over other apps\" is granted: FreeKiosk can start at boot.",
       "openSystemSettings": "Open System Settings",
       "screenLockCompat": "System screen-lock compatibility",
       "screenLockCompatHint": "Enable ONLY if you set a native Android screen-lock (PIN/password) on this device. FreeKiosk then (1) steps aside for the secure lock screen at boot instead of locking immediately — preventing the reboot freeze caused by the conflict between the kiosk and the secure lock screen — and (2) keeps the system keyguard active while pinned, so the screen-lock actually prompts after the screen turns off and back on (without this, lock-task mode disables the keyguard and the password never appears). A system screen-lock means someone must enter the password on the device after every reboot before the kiosk starts, and on every wake — unsuitable for unattended devices. For device security, the FreeKiosk exit PIN + Device Owner is usually the better choice.",

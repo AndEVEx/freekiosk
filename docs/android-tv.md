@@ -88,6 +88,16 @@ adb shell appops set com.freekiosk GET_USAGE_STATS allow       # usage access (E
 
 **Grant display over other apps on a TV without Device Owner.** Without it, after an ADB configuration the app stops and Android blocks its relaunch (*Background activity launch blocked*); with it, the relaunch works. Checked on the Android TV emulator.
 
+**Start at boot, and after a power cut.** Settings > Security > Launch on Boot is not enough on a TV without Device Owner. Checked on the Android TV emulator (API 36) with a real reboot (`adb reboot`):
+
+| Device state | After the reboot |
+|---|---|
+| Launch on Boot on, *display over other apps* granted | FreeKiosk is in front within 10 seconds and loads its page. |
+| Launch on Boot on, *display over other apps* **not** granted | **FreeKiosk does not start**: the TV home screen stays, no request reaches the server after 70 seconds. |
+| Launch on Boot on, permission not granted, FreeKiosk set as the Home app (`adb shell cmd package set-home-activity com.freekiosk/.MainActivity`) | FreeKiosk is in front and loads its page. |
+
+So on a TV, grant the permission once (command above) or make FreeKiosk the Home app. Under Launch on Boot the settings now say which case the TV is in: a warning with the command when the permission is missing, a confirmation when it is granted. Not checked: Device Owner on a TV image (the restriction may not apply to it), the in-app *Set FreeKiosk as default launcher* button on a TV (only the command above was used), a power cut on a real box (the emulator reboot is a clean one), and a box whose Home app cannot be changed.
+
 ### Configure over ADB
 
 The remote makes typing long values slow. Set the start URL and the PIN once over `adb`, then open the PIN screen with Back ×5 for the rest:

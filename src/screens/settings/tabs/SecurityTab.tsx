@@ -17,6 +17,7 @@ import {
 } from '../../../components/settings';
 import { Colors, Spacing, Typography } from '../../../theme';
 import { useTranslation } from 'react-i18next';
+import TvBootPermissionNotice from '../../../components/settings/TvBootPermissionNotice';
 
 interface SecurityTabProps {
   displayMode: 'webview' | 'external_app' | 'media_player';
@@ -337,18 +338,25 @@ const SecurityTab: React.FC<SecurityTabProps> = ({
           onValueChange={onAutoLaunchChange}
         />
 
-        <SettingsInfoBox variant="info">
-          <Text style={styles.infoText}>
-            {t('security.autoLaunch.appearOnTopInfo')}
-          </Text>
-        </SettingsInfoBox>
+        {Platform.isTV ? (
+          // A TV has no screen to grant it from, and Device Owner does not need it
+          !isDeviceOwner && <TvBootPermissionNotice />
+        ) : (
+          <>
+            <SettingsInfoBox variant="info">
+              <Text style={styles.infoText}>
+                {t('security.autoLaunch.appearOnTopInfo')}
+              </Text>
+            </SettingsInfoBox>
 
-        <SettingsButton
-          title={t('security.autoLaunch.openSystemSettings')}
-          icon="cog-outline"
-          variant="primary"
-          onPress={onOpenSystemSettings}
-        />
+            <SettingsButton
+              title={t('security.autoLaunch.openSystemSettings')}
+              icon="cog-outline"
+              variant="primary"
+              onPress={onOpenSystemSettings}
+            />
+          </>
+        )}
 
         {/* System screen-lock compatibility — Device Owner only (#199) */}
         {isDeviceOwner && (
