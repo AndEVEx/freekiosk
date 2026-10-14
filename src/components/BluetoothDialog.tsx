@@ -19,7 +19,7 @@ import {
   DeviceEventEmitter,
   Alert,
 } from 'react-native';
-import { NativeModules } from 'react-native';
+import { NativeModules, Platform } from 'react-native';
 import Icon from './Icon';
 import { useTranslation } from 'react-i18next';
 
@@ -116,7 +116,24 @@ export default function BluetoothDialog({ visible, onClose }: Props) {
     };
   }, [visible, refresh]);
 
-  const handleToggleBt = async () => {
+  // On a TV the remote is very often Bluetooth: turning Bluetooth off would leave nothing to
+  // switch it back on with, so ask first.
+  const handleToggleBt = () => {
+    if (btInfo?.isEnabled && Platform.isTV) {
+      Alert.alert(
+        t('components.bluetoothDialog.tvOffTitle'),
+        t('components.bluetoothDialog.tvOffMessage'),
+        [
+          { text: t('components.bluetoothDialog.cancel'), style: 'cancel' },
+          { text: t('components.bluetoothDialog.tvOffConfirm'), style: 'destructive', onPress: () => { void toggleBt(); } },
+        ]
+      );
+      return;
+    }
+    void toggleBt();
+  };
+
+  const toggleBt = async () => {
     if (!btInfo || togglingBt) return;
     const previousInfo = btInfo;
     const nextEnabled = !btInfo.isEnabled;
