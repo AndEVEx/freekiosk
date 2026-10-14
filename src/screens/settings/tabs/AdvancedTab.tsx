@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useCallback, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, AppState, NativeModules } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, AppState, NativeModules, Platform } from 'react-native';
 import {
   SettingsSection,
   SettingsButton,
@@ -298,12 +298,15 @@ const AdvancedTab: React.FC<AdvancedTabProps> = ({
               value={enrollToken}
               onChangeText={setEnrollToken}
             />
-            <SettingsButton
-              title={t('advanced.cloud.scanQr')}
-              icon="camera"
-              variant="secondary"
-              onPress={() => setShowScanner(true)}
-            />
+            {/* A TV has no camera to scan with: the URL and the token are typed */}
+            {!Platform.isTV && (
+              <SettingsButton
+                title={t('advanced.cloud.scanQr')}
+                icon="camera"
+                variant="secondary"
+                onPress={() => setShowScanner(true)}
+              />
+            )}
             <SettingsButton
               title={enrolling ? t('advanced.cloud.enrolling') : t('advanced.cloud.enrollDevice')}
               icon="upload"

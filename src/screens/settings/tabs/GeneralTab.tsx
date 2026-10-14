@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, Linking } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, Linking, Platform } from 'react-native';
 import {
   SettingsSection,
   SettingsInput,
@@ -27,6 +27,7 @@ import { ScheduledEvent } from '../../../types/planner';
 import type { MediaItem, MediaFitMode } from '../../../types/mediaPlayer';
 import { generateMediaItemId, detectMediaType, isLocalMedia, getMediaDisplayName } from '../../../types/mediaPlayer';
 import FilePickerModule from '../../../utils/FilePickerModule';
+import { useFilePickerAvailable } from '../../../utils/useFilePickerAvailable';
 import type { PickedFile } from '../../../utils/FilePickerModule';
 import { useTranslation } from 'react-i18next';
 import type { SupportedLanguage } from '../../../i18n';
@@ -302,6 +303,7 @@ const GeneralTab: React.FC<GeneralTabProps> = ({
   onBackToKiosk,
 }) => {
   const { t } = useTranslation();
+  const filePickerAvailable = useFilePickerAvailable();
 
   return (
     <View>
@@ -342,13 +344,22 @@ const GeneralTab: React.FC<GeneralTabProps> = ({
         )}
       </SettingsSection>
 
+      {/* External App mode on a TV: no key reaches FreeKiosk while another app is in front */}
+      {Platform.isTV && displayMode === 'external_app' && (
+        <SettingsInfoBox variant="warning">
+          <Text style={styles.infoText}>{t('general.externalAppTvWarning')}</Text>
+        </SettingsInfoBox>
+      )}
+
       {/* How to Use */}
       <SettingsSection variant="info">
         <Text style={styles.infoTitle}>{t('general.howToUse.title')}</Text>
         <Text style={styles.infoText}>
-          {displayMode === 'media_player'
-            ? t('general.howToUse.media')
-            : t('general.howToUse.webview')}
+          {Platform.isTV && displayMode !== 'external_app'
+            ? t('general.howToUse.tv')
+            : displayMode === 'media_player'
+              ? t('general.howToUse.media')
+              : t('general.howToUse.webview')}
         </Text>
       </SettingsSection>
       
@@ -363,7 +374,12 @@ const GeneralTab: React.FC<GeneralTabProps> = ({
               </Text>
             </SettingsInfoBox>
 
-            {/* Pick from device buttons */}
+            {/* Pick from device buttons: a TV usually has no file picker */}
+            {filePickerAvailable === false ? (
+              <SettingsInfoBox variant="warning">
+                <Text style={styles.infoText}>{t('general.mediaPlaylist.noFilePicker')}</Text>
+              </SettingsInfoBox>
+            ) : (
             <View style={styles.pickButtonsRow}>
               <TouchableOpacity
                 style={[styles.pickButton, pickingMedia && styles.pickButtonDisabled]}
@@ -392,6 +408,7 @@ const GeneralTab: React.FC<GeneralTabProps> = ({
                 <Icon name="image-outline" size={20} color={Colors.textOnPrimary} />
               </TouchableOpacity>
             </View>
+            )}
             
             {mediaPlayerItems.map((item, index) => (
               <View key={item.id} style={styles.mediaItemCard}>
@@ -997,7 +1014,9 @@ const GeneralTab: React.FC<GeneralTabProps> = ({
       {/* Printing - WebView only */}
       {displayMode === 'webview' && (
         <SettingsSection title={t('general.printing.title')} icon="printer">
-          {/* Window Printing (Android print dialog) */}
+          {/* Window Printing (Android print dialog): a TV has no print service */}
+          {!Platform.isTV && (
+          <>
           <Text style={[styles.subSectionTitle, styles.subSectionTitleFirst]}>{t('general.printing.windowTitle')}</Text>
           <SettingsSwitch
             label={t('general.printing.allow')}
@@ -1030,6 +1049,9 @@ const GeneralTab: React.FC<GeneralTabProps> = ({
                 {t('general.printing.info')}
               </Text>
             </SettingsInfoBox>
+          )}
+
+          </>
           )}
 
           {/* Silent Printing (USB ESC/POS, no dialog) */}

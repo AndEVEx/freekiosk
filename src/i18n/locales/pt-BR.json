@@ -1,6 +1,7 @@
 {
   "common": {},
   "general": {
+    "externalAppTvWarning": "Em uma TV, nenhuma tecla chega ao FreeKiosk enquanto outro aplicativo está em primeiro plano, então o controle remoto não consegue levar você de volta a estas configurações. Use o FreeKiosk Cloud, MQTT, a API REST ou o adb para alterá-las.",
     "language": {
       "title": "Idioma",
       "label": "Idioma do aplicativo"
@@ -16,10 +17,12 @@
     },
     "howToUse": {
       "title": "Como usar",
+      "tv": "• Defina a URL da página web a exibir, ou uma lista de URLs\n• Defina um código PIN seguro\n• Pressione Voltar 5 vezes no controle remoto para abrir estas configurações de novo\n• Digite o código PIN para desbloquear",
       "media": "• Adicione URLs de vídeos ou imagens para montar uma playlist\n• Configure as opções de reprodução (repetir, aleatório etc.)\n• Defina um código PIN seguro\n• Ative o \"Modo Bloqueio\" para o modo quiosque completo\n• Toque 5 vezes para acessar as configurações",
       "webview": "• Configure a URL da página web a ser exibida\n• Defina um código PIN seguro\n• Ative o \"Modo Bloqueio\" para o modo quiosque completo\n• Toque 5 vezes no botão secreto para acessar as configurações (padrão: canto inferior direito)\n• Digite o código PIN para desbloquear"
     },
     "mediaPlaylist": {
+      "noFilePicker": "Este dispositivo não tem seletor de arquivos (comum em uma TV), então não é possível adicionar vídeos e imagens do armazenamento. Use uma URL.",
       "title": "Playlist de mídia",
       "info": "Adicione mídias do seu dispositivo ou por URL.\nFormatos aceitos: MP4, WebM, OGG (vídeo) • JPG, PNG, GIF, WebP, SVG (imagem)\n\nOs arquivos locais são copiados para o armazenamento do aplicativo para uma reprodução confiável.",
       "picking": "Selecionando...",
@@ -541,6 +544,8 @@
       "rotationLockHintUnavailable": "Indisponível neste dispositivo porque o Android não permite que este app altere as configurações de rotação do sistema."
     },
     "returnInfo": {
+      "tvExternal": "• Indisponível enquanto outro aplicativo está em primeiro plano: o controle remoto não consegue levar você de volta. Use o FreeKiosk Cloud, MQTT, a API REST ou o adb",
+      "tvBack": "• Pressione Voltar 5 vezes no controle remoto, cada toque até 2 segundos após o anterior",
       "title": "Voltar às configurações",
       "buttonLine": "• Toque no botão de retorno ({{position}}) {{count}} vezes{{invisible}}",
       "anywhereLine": "• Toque {{count}} vezes em qualquer lugar da tela em até {{timeout}}{{visual}}",
@@ -708,6 +713,7 @@
       "dismiss": "Fechar"
     },
     "backupRestore": {
+      "noFilePicker": "Este dispositivo não tem seletor de arquivos (comum em uma TV): salvar um backup em arquivo e procurar um não está disponível aqui.",
       "exportFailed": "Falha na exportação",
       "prepareFailedMessage": "Não foi possível preparar os dados do backup",
       "ok": "OK",

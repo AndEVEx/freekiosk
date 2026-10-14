@@ -1,6 +1,7 @@
 {
   "common": {},
   "general": {
+    "externalAppTvWarning": "Sur un téléviseur, aucune touche n'arrive à FreeKiosk tant qu'une autre application est au premier plan : la télécommande ne peut donc pas vous ramener à ces réglages. Utilisez FreeKiosk Cloud, MQTT, l'API REST ou adb pour les modifier.",
     "language": {
       "title": "Langue",
       "label": "Langue de l'application"
@@ -16,10 +17,12 @@
     },
     "howToUse": {
       "title": "Comment utiliser",
+      "tv": "• Indiquez l'URL de la page web à afficher, ou une liste d'URL\n• Définissez un code PIN sécurisé\n• Appuyez 5 fois sur Retour de la télécommande pour rouvrir ces réglages\n• Saisissez le code PIN pour déverrouiller",
       "media": "• Ajoutez des URL de vidéos ou d'images pour créer une playlist\n• Configurez les options de lecture (boucle, aléatoire, etc.)\n• Définissez un code PIN sécurisé\n• Activez le « Mode verrouillé » pour le mode kiosque complet\n• Appuyez 5 fois pour accéder aux réglages",
       "webview": "• Configurez l'URL de la page web à afficher\n• Définissez un code PIN sécurisé\n• Activez le « Mode verrouillé » pour le mode kiosque complet\n• Appuyez 5 fois sur le bouton secret pour accéder aux réglages (par défaut : en bas à droite)\n• Entrez le code PIN pour déverrouiller"
     },
     "mediaPlaylist": {
+      "noFilePicker": "Cet appareil n'a pas de sélecteur de fichiers (fréquent sur un téléviseur) : on ne peut pas ajouter de vidéos ou d'images depuis son stockage. Utilisez une URL.",
       "title": "Playlist multimédia",
       "info": "Ajoutez des médias depuis votre appareil ou via une URL.\nFormats pris en charge : MP4, WebM, OGG (vidéo) • JPG, PNG, GIF, WebP, SVG (image)\n\nLes fichiers locaux sont copiés dans le stockage de l'application pour une lecture fiable.",
       "picking": "Sélection...",
@@ -541,6 +544,8 @@
       "rotationLockHintUnavailable": "Indisponible sur cet appareil car Android n'autorise pas cette application à modifier les réglages de rotation système."
     },
     "returnInfo": {
+      "tvExternal": "• Indisponible quand une autre application est au premier plan : la télécommande ne peut pas vous ramener. Utilisez FreeKiosk Cloud, MQTT, l'API REST ou adb",
+      "tvBack": "• Appuyez 5 fois sur Retour de la télécommande, chaque appui moins de 2 secondes après le précédent",
       "title": "Retour aux réglages",
       "buttonLine": "• Touchez le bouton retour ({{position}}) {{count}} fois{{invisible}}",
       "anywhereLine": "• Touchez {{count}} fois n'importe où sur l'écran en {{timeout}}{{visual}}",
@@ -708,6 +713,7 @@
       "dismiss": "Fermer"
     },
     "backupRestore": {
+      "noFilePicker": "Cet appareil n'a pas de sélecteur de fichiers (fréquent sur un téléviseur) : enregistrer une sauvegarde dans un fichier ou en chercher un n'est pas possible ici.",
       "exportFailed": "Échec de l'export",
       "prepareFailedMessage": "Échec de la préparation des données de sauvegarde",
       "ok": "OK",

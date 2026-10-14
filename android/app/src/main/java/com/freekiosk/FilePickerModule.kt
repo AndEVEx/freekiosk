@@ -38,6 +38,20 @@ class FilePickerModule(reactContext: ReactApplicationContext) :
     override fun getName(): String = NAME
 
     /**
+     * False on a device with no real document picker. Android TV images ship without
+     * DocumentsUI and put a stub in its place (com.android.tv.frameworkpackagestubs): it
+     * does answer ACTION_OPEN_DOCUMENT, so "an activity resolves" is not enough, and
+     * starting it only tells the user the feature is missing. The settings say so up front
+     * instead of offering buttons that cannot work.
+     */
+    @ReactMethod
+    fun isAvailable(promise: Promise) {
+        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("*/*")
+        val found = intent.resolveActivity(reactApplicationContext.packageManager)
+        promise.resolve(found != null && !found.packageName.endsWith(".frameworkpackagestubs"))
+    }
+
+    /**
      * Open the Android file picker for media selection.
      * @param mediaType "video", "image", or "any" (default: "any")
      * Returns a WritableMap with: { path, name, mimeType, size, type }

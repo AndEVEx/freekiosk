@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { View, Text, StyleSheet, Linking } from 'react-native';
+import { View, Text, StyleSheet, Linking, Platform } from 'react-native';
 import {
   SettingsSection,
   SettingsSwitch,
@@ -393,7 +393,8 @@ const SecurityTab: React.FC<SecurityTabProps> = ({
         )}
       </SettingsSection>
       
-      {/* Return to Settings */}
+      {/* Return to Settings: taps and the volume keys. A TV has neither (Back x5, see the info box at the bottom) */}
+      {!Platform.isTV && (
       <SettingsSection title={t('security.returnToSettings.title')} icon="gesture-tap">
         <SettingsRadioGroup
           hint={t('security.returnToSettings.hint')}
@@ -497,8 +498,10 @@ const SecurityTab: React.FC<SecurityTabProps> = ({
           </Text>
         </SettingsInfoBox>
       </SettingsSection>
+      )}
       
-      {/* Touch Blocking Overlays - Works without Device Owner but less secure */}
+      {/* Touch Blocking Overlays - Works without Device Owner but less secure. Nothing to block on a TV: no touch */}
+      {!Platform.isTV && (
       <SettingsSection title={t('security.touchBlocking.title')} icon="gesture-tap-button">
         <SettingsInfoBox variant="info">
           <Text style={styles.infoText}>
@@ -529,6 +532,7 @@ const SecurityTab: React.FC<SecurityTabProps> = ({
           </SettingsInfoBox>
         )}
       </SettingsSection>
+      )}
 
       {/* URL Filtering - Blacklist/Whitelist (WebView mode only) */}
       {displayMode === 'webview' && (
@@ -696,14 +700,18 @@ const SecurityTab: React.FC<SecurityTabProps> = ({
               value={lockscreenBluetoothEnabled}
               onValueChange={onLockscreenBluetoothEnabledChange}
             />
-            <View style={styles.divider} />
-            <SettingsSwitch
-              label={t('security.lockScreenControls.emergencyCall')}
-              icon="phone"
-              hint={t('security.lockScreenControls.emergencyCallHint')}
-              value={lockscreenEmergencyCallEnabled}
-              onValueChange={onLockscreenEmergencyCallEnabledChange}
-            />
+            {!Platform.isTV && (
+              <>
+              <View style={styles.divider} />
+              <SettingsSwitch
+                label={t('security.lockScreenControls.emergencyCall')}
+                icon="phone"
+                hint={t('security.lockScreenControls.emergencyCallHint')}
+                value={lockscreenEmergencyCallEnabled}
+                onValueChange={onLockscreenEmergencyCallEnabledChange}
+              />
+              </>
+            )}
             <View style={styles.divider} />
             <SettingsSwitch
               label={t('security.lockScreenControls.audio')}
@@ -712,35 +720,47 @@ const SecurityTab: React.FC<SecurityTabProps> = ({
               value={lockscreenAudioEnabled}
               onValueChange={onLockscreenAudioEnabledChange}
             />
-            <View style={styles.divider} />
-            <SettingsSwitch
-              label={t('security.lockScreenControls.flashlight')}
-              icon="flashlight"
-              hint={t('security.lockScreenControls.flashlightHint')}
-              value={lockscreenFlashlightEnabled}
-              onValueChange={onLockscreenFlashlightEnabledChange}
-            />
-            <View style={styles.divider} />
-            <SettingsSwitch
-              label={t('security.lockScreenControls.brightness')}
-              icon="white-balance-sunny"
-              hint={t('security.lockScreenControls.brightnessHint')}
-              value={lockscreenBrightnessEnabled}
-              onValueChange={onLockscreenBrightnessEnabledChange}
-            />
-            <View style={styles.divider} />
-            <SettingsSwitch
-              label={t('security.lockScreenControls.rotationLock')}
-              icon="screen-rotation"
-              hint={
-                lockscreenRotationLockAvailable
-                  ? t('security.lockScreenControls.rotationLockHintAvailable')
-                  : t('security.lockScreenControls.rotationLockHintUnavailable')
-              }
-              value={lockscreenRotationLockAvailable && lockscreenRotationLockEnabled}
-              onValueChange={onLockscreenRotationLockEnabledChange}
-              disabled={!lockscreenRotationLockAvailable}
-            />
+            {!Platform.isTV && (
+              <>
+              <View style={styles.divider} />
+              <SettingsSwitch
+                label={t('security.lockScreenControls.flashlight')}
+                icon="flashlight"
+                hint={t('security.lockScreenControls.flashlightHint')}
+                value={lockscreenFlashlightEnabled}
+                onValueChange={onLockscreenFlashlightEnabledChange}
+              />
+              </>
+            )}
+            {!Platform.isTV && (
+              <>
+              <View style={styles.divider} />
+              <SettingsSwitch
+                label={t('security.lockScreenControls.brightness')}
+                icon="white-balance-sunny"
+                hint={t('security.lockScreenControls.brightnessHint')}
+                value={lockscreenBrightnessEnabled}
+                onValueChange={onLockscreenBrightnessEnabledChange}
+              />
+              </>
+            )}
+            {!Platform.isTV && (
+              <>
+              <View style={styles.divider} />
+              <SettingsSwitch
+                label={t('security.lockScreenControls.rotationLock')}
+                icon="screen-rotation"
+                hint={
+                  lockscreenRotationLockAvailable
+                    ? t('security.lockScreenControls.rotationLockHintAvailable')
+                    : t('security.lockScreenControls.rotationLockHintUnavailable')
+                }
+                value={lockscreenRotationLockAvailable && lockscreenRotationLockEnabled}
+                onValueChange={onLockscreenRotationLockEnabledChange}
+                disabled={!lockscreenRotationLockAvailable}
+              />
+              </>
+            )}
           </>
         )}
       </SettingsSection>
@@ -749,7 +769,9 @@ const SecurityTab: React.FC<SecurityTabProps> = ({
       <SettingsSection variant="info">
         <Text style={styles.infoTitle}>{t('security.returnInfo.title')}</Text>
         <Text style={styles.infoText}>
-          {displayMode === 'external_app' && returnMode === 'button'
+          {Platform.isTV
+            ? (displayMode === 'external_app' ? t('security.returnInfo.tvExternal') : t('security.returnInfo.tvBack'))
+            : displayMode === 'external_app' && returnMode === 'button'
             ? t('security.returnInfo.buttonLine', {
                 position: returnButtonPosition,
                 count: returnTapCount || '5',
@@ -760,8 +782,8 @@ const SecurityTab: React.FC<SecurityTabProps> = ({
                 timeout: returnTapTimeout ? `${(parseInt(returnTapTimeout, 10) / 1000).toFixed(1)}s` : '1.5s',
                 visual: overlayButtonVisible ? t('security.returnInfo.visualIndicator') : '',
               })}
-          {displayMode === 'external_app' && '\n' + t('security.returnInfo.recentApps')}
-          {(displayMode === 'webview' || displayMode === 'media_player') && volumeUp5TapEnabled && '\n' + t('security.returnInfo.volumeAlt', { count: returnTapCount || '5' })}
+          {!Platform.isTV && displayMode === 'external_app' && '\n' + t('security.returnInfo.recentApps')}
+          {!Platform.isTV && (displayMode === 'webview' || displayMode === 'media_player') && volumeUp5TapEnabled && '\n' + t('security.returnInfo.volumeAlt', { count: returnTapCount || '5' })}
         </Text>
       </SettingsSection>
     </View>

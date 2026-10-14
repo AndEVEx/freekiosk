@@ -1,6 +1,7 @@
 {
   "common": {},
   "general": {
+    "externalAppTvWarning": "On a TV, nothing reaches FreeKiosk while another app is in front, so the remote cannot bring you back to these settings. Use FreeKiosk Cloud, MQTT, the REST API or adb to change them.",
     "language": {
       "title": "Language",
       "label": "App Language"
@@ -16,10 +17,12 @@
     },
     "howToUse": {
       "title": "How to Use",
+      "tv": "• Set the URL of the web page to display, or a playlist of URLs\n• Set a secure PIN code\n• Press Back 5 times on the remote to open these settings again\n• Enter the PIN code to unlock",
       "media": "• Add video or image URLs to build a playlist\n• Configure playback options (loop, shuffle, etc.)\n• Set a secure PIN code\n• Enable \"Lock Mode\" for full kiosk mode\n• Tap 5 times to access settings",
       "webview": "• Configure the URL of the web page to display\n• Set a secure PIN code\n• Enable \"Lock Mode\" for full kiosk mode\n• Tap 5 times on the secret button to access settings (default: bottom-right)\n• Enter PIN code to unlock"
     },
     "mediaPlaylist": {
+      "noFilePicker": "This device has no file picker (usual on a TV), so videos and images cannot be added from its storage. Use a URL instead.",
       "title": "Media Playlist",
       "info": "Add media from your device or via URL.\nSupported: MP4, WebM, OGG (video) • JPG, PNG, GIF, WebP, SVG (image)\n\nLocal files are copied to app storage for reliable playback.",
       "picking": "Picking...",
@@ -541,6 +544,8 @@
       "rotationLockHintUnavailable": "Unavailable on this device because Android is not allowing this app to change system rotation settings."
     },
     "returnInfo": {
+      "tvExternal": "• Not available while another app is in front: the remote cannot bring you back. Use FreeKiosk Cloud, MQTT, the REST API or adb",
+      "tvBack": "• Press Back 5 times on the remote, each press within 2 seconds of the previous one",
       "title": "Return to Settings",
       "buttonLine": "• Tap the return button ({{position}}) {{count}} times{{invisible}}",
       "anywhereLine": "• Tap {{count}} times anywhere on the screen within {{timeout}}{{visual}}",
@@ -708,6 +713,7 @@
       "dismiss": "Close"
     },
     "backupRestore": {
+      "noFilePicker": "This device has no file picker (usual on a TV): saving a backup to a file and browsing for one are not available here.",
       "exportFailed": "Export Failed",
       "prepareFailedMessage": "Failed to prepare backup data",
       "ok": "OK",

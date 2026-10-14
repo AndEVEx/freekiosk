@@ -28,6 +28,7 @@ import {
   BackupData,
 } from '../../utils/BackupService';
 import FilePickerModule from '../../utils/FilePickerModule';
+import { useFilePickerAvailable } from '../../utils/useFilePickerAvailable';
 import { useTranslation } from 'react-i18next';
 
 interface BackupFile {
@@ -44,6 +45,7 @@ const BackupRestoreSection: React.FC<BackupRestoreSectionProps> = ({
   onRestoreComplete,
 }) => {
   const { t } = useTranslation();
+  const filePickerAvailable = useFilePickerAvailable();
   const [isExporting, setIsExporting] = useState(false);
   const [showRestoreModal, setShowRestoreModal] = useState(false);
   const [backupFiles, setBackupFiles] = useState<BackupFile[]>([]);
@@ -328,11 +330,18 @@ const BackupRestoreSection: React.FC<BackupRestoreSectionProps> = ({
         {t('components.backupRestore.description')}
       </Text>
 
+      {/* A TV usually has no file picker: saving to a file and browsing for one cannot work */}
+      {filePickerAvailable === false && (
+        <Text style={[styles.description, { color: Colors.warning }]}>
+          {t('components.backupRestore.noFilePicker')}
+        </Text>
+      )}
+
       <View style={styles.buttonRow}>
         <TouchableOpacity
           style={[styles.actionButton, styles.exportButton]}
           onPress={handleExportBackup}
-          disabled={isExporting}
+          disabled={isExporting || filePickerAvailable === false}
         >
           {isExporting ? (
             <ActivityIndicator size="small" color={Colors.textOnPrimary} />
@@ -378,7 +387,7 @@ const BackupRestoreSection: React.FC<BackupRestoreSectionProps> = ({
 
           <View style={styles.modalContent}>
             {/* Browse Files Button (Android only - uses SAF to bypass Scoped Storage) */}
-            {Platform.OS === 'android' && (
+            {Platform.OS === 'android' && filePickerAvailable !== false && (
               <TouchableOpacity
                 style={styles.browseButton}
                 onPress={handleBrowseFile}

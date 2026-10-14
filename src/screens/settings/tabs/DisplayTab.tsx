@@ -602,7 +602,8 @@ const DisplayTab: React.FC<DisplayTabProps> = ({
                 />
               </View>
 
-              {/* Motion Detection */}
+              {/* Motion Detection: needs a camera, which a TV does not have */}
+              {!Platform.isTV && (
               <View style={styles.subSection}>
                 <Text style={styles.subSectionTitle}>{t('display.screensaver.motionTitle')}</Text>
                 <SettingsSwitch
@@ -667,6 +668,8 @@ const DisplayTab: React.FC<DisplayTabProps> = ({
                   </>
                 )}
               </View>
+
+              )}
 
               {/* Proximity Detection (hardware sensor) */}
               <View style={styles.subSection}>

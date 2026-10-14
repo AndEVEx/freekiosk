@@ -32,6 +32,8 @@ interface SavedJsonFile {
 }
 
 interface FilePickerModuleType {
+  /** False when the device has no document picker (typical on a TV) */
+  isAvailable(): Promise<boolean>;
   /** Open file picker for single media selection */
   pickMedia(mediaType: 'video' | 'image' | 'any'): Promise<PickedFile>;
   /** Open file picker for multiple media selection */
