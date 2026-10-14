@@ -22,6 +22,8 @@ const {
   withCachedUrls,
   sameCacheMap,
   defaultMediaCacheEnabled,
+  formatBytes,
+  DEFAULT_MEDIA_CACHE_LIMIT_MB,
 } = require('../src/utils/MediaCache');
 
 const store = AsyncStorage.default ?? AsyncStorage;
@@ -168,5 +170,25 @@ describe('the cache setting', () => {
     await StorageService.saveMediaPlayerCache(true);
     await StorageService.importConfig({ general: { mediaPlayer: { loop: false } } });
     expect(await StorageService.getMediaPlayerCache()).toBe(true);
+  });
+});
+
+
+describe('formatBytes', () => {
+  it('writes a size the way the settings show it', () => {
+    expect(formatBytes(0)).toBe('0 KB');
+    expect(formatBytes(-5)).toBe('0 KB');
+    expect(formatBytes(NaN)).toBe('0 KB');
+    expect(formatBytes(512)).toBe('1 KB');
+    expect(formatBytes(788493)).toBe('770 KB');
+    expect(formatBytes(1048576)).toBe('1 MB');
+    expect(formatBytes(1572864)).toBe('1.5 MB');
+    expect(formatBytes(12582912)).toBe('12 MB');
+    expect(formatBytes(2 * 1024 * 1024 * 1024)).toBe('2 GB');
+    expect(formatBytes(1536 * 1024 * 1024)).toBe('1.5 GB');
+  });
+
+  it('keeps the default limit at 2 GB', () => {
+    expect(DEFAULT_MEDIA_CACHE_LIMIT_MB).toBe(2048);
   });
 });

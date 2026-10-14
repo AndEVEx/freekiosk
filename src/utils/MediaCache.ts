@@ -11,12 +11,19 @@ import type { MediaItem } from '../types/mediaPlayer';
 /** Local file URI of each URL, or null when the file is not on the device. */
 export type MediaCacheMap = Record<string, string | null>;
 
+/** What is on the device: finished files, and bytes of downloads that were cut and will resume. */
+export interface MediaCacheStats {
+  files: number;
+  bytes: number;
+  partialBytes: number;
+}
+
 interface MediaCacheModuleType {
   /** What is on the device already. No network. */
   getCached(urls: string[]): Promise<MediaCacheMap>;
   /** Downloads what is missing or changed, deletes what is no longer wanted. */
-  sync(urls: string[]): Promise<MediaCacheMap>;
-  getStats(): Promise<{ files: number; bytes: number }>;
+  sync(urls: string[], limitBytes: number): Promise<MediaCacheMap>;
+  getStats(): Promise<MediaCacheStats>;
   clear(): Promise<boolean>;
 }
 
@@ -66,4 +73,21 @@ export function sameCacheMap(a: MediaCacheMap, b: MediaCacheMap): boolean {
  */
 export function defaultMediaCacheEnabled(): boolean {
   return Platform.isTV === true;
+}
+
+/** Largest the cache may grow, in megabytes, when nobody set a limit. */
+export const DEFAULT_MEDIA_CACHE_LIMIT_MB = 2048;
+
+/** 1536 -> "1.5 GB", 788493 -> "770 KB": what the settings show for a size. */
+export function formatBytes(bytes: number): string {
+  if (!Number.isFinite(bytes) || bytes <= 0) return '0 KB';
+  const units = ['KB', 'MB', 'GB', 'TB'];
+  let value = bytes / 1024;
+  let unit = 0;
+  while (value >= 1024 && unit < units.length - 1) {
+    value /= 1024;
+    unit += 1;
+  }
+  const text = value >= 100 || unit === 0 ? Math.round(value).toString() : value.toFixed(1).replace(/\.0$/, '');
+  return `${text} ${units[unit]}`;
 }

@@ -40,6 +40,10 @@
     "playback": {
       "cache": "Reproduzir do dispositivo (cache offline)",
       "cacheHint": "Baixa cada vídeo e cada imagem para o dispositivo e reproduz de lá, para que uma queda de rede não interrompa a playlist. Os arquivos são verificados novamente a cada 10 minutos, um arquivo alterado é baixado de novo e um arquivo removido da playlist é apagado. A primeira reprodução de um novo item aguarda o download.",
+      "cacheStats": "No dispositivo: {{files}} arquivos, {{size}}",
+      "cacheStatsPartial": "No dispositivo: {{files}} arquivos, {{size}} (+ {{partial}} de um download em andamento)",
+      "cacheEmpty": "Nada no dispositivo ainda",
+      "cacheClear": "Limpar o cache",
       "title": "Reprodução",
       "autoPlay": "Reprodução automática",
       "autoPlayHint": "Começar a reproduzir automaticamente quando a tela carregar",

@@ -89,6 +89,16 @@ const MEDIA_PAUSE_JS = `(function(){try{document.querySelectorAll('audio,video')
 const makePrinterNonce = (): string =>
   Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
 
+/**
+ * The user agent when none is set. Modern Chrome on Android, to avoid WAF blocks (e.g. SiteGround).
+ * On a TV the "Mobile" token is left out: a site then serves its tablet or desktop layout, made
+ * for a wide screen, instead of a phone layout stretched over 1920 pixels.
+ */
+export function defaultUserAgent(): string {
+  const mobile = Platform.isTV ? '' : ' Mobile';
+  return `Mozilla/5.0 (Linux; Android 13; Pixel 6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0${mobile} Safari/537.36`;
+}
+
 const WebViewComponent = forwardRef<WebViewComponentRef, WebViewComponentProps>(({ 
   url, 
   autoReload,
@@ -1284,7 +1294,7 @@ const WebViewComponent = forwardRef<WebViewComponentRef, WebViewComponentProps>(
         
         // User Agent - Modern Chrome on Android to avoid WAF blocks (e.g. SiteGround)
         // Custom UA takes precedence if set, otherwise use a recent Chrome stable UA
-        userAgent={customUserAgent?.trim() || "Mozilla/5.0 (Linux; Android 13; Pixel 6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36"}
+        userAgent={customUserAgent?.trim() || defaultUserAgent()}
         
         originWhitelist={pdfViewerEnabled ? ['http://*', 'https://*', 'file://*'] : ['http://*', 'https://*']}
         mixedContentMode="always"

@@ -399,6 +399,7 @@ editor writes, so a rule built on a tablet and read back from the cloud is a val
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `--ez media_player_cache true` | Boolean | Play the Media Player from files kept on the device (offline cache). Without it, the default is on for a TV and off everywhere else. The playlist itself is not set over ADB: use Settings or the cloud |
+| `--ei media_player_cache_limit_mb 2048` | Integer | Largest the offline cache may grow, in megabytes (default 2048). A file that would pass it is not downloaded and plays from its URL. A per-device value: it is not part of the cloud config |
 
 ### Screensaver Options
 

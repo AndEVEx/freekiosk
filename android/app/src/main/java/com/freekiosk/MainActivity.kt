@@ -96,6 +96,7 @@ class MainActivity : ReactActivity() {
     val ADB_SIMPLE_KEYS = mapOf(
       "display_mode" to "@kiosk_display_mode",
       "media_player_cache" to "@kiosk_media_player_cache",
+      "media_player_cache_limit_mb" to "@kiosk_media_player_cache_limit_mb",
       "auto_reload" to "@kiosk_auto_reload",
       "auto_relaunch" to "@kiosk_auto_relaunch_app",
       "auto_relaunch_app" to "@kiosk_auto_relaunch_app",
@@ -1134,6 +1135,12 @@ class MainActivity : ReactActivity() {
       ringedPreviousForeground = null
       if (newFocus == null || newFocus is android.widget.EditText ||
           newFocus.javaClass.name.contains("WebView")) return@addOnGlobalFocusChangeListener
+      // A container that covers most of the screen (the page itself holds the focus) is not an
+      // element to point at: an outline around the whole screen is noise, not information.
+      val screen = window.decorView
+      if (newFocus.width.toLong() * newFocus.height > 0.6 * screen.width.toLong() * screen.height) {
+        return@addOnGlobalFocusChangeListener
+      }
       ringedPreviousForeground = newFocus.foreground
       ringedView = newFocus
       newFocus.foreground = android.graphics.drawable.GradientDrawable().apply {

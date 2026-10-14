@@ -28,6 +28,7 @@ import type { MediaItem, MediaFitMode } from '../../../types/mediaPlayer';
 import { generateMediaItemId, detectMediaType, isLocalMedia, getMediaDisplayName } from '../../../types/mediaPlayer';
 import FilePickerModule from '../../../utils/FilePickerModule';
 import { useFilePickerAvailable } from '../../../utils/useFilePickerAvailable';
+import MediaCacheStatus from '../../../components/settings/MediaCacheStatus';
 import type { PickedFile } from '../../../utils/FilePickerModule';
 import { useTranslation } from 'react-i18next';
 import type { SupportedLanguage } from '../../../i18n';
@@ -554,6 +555,7 @@ const GeneralTab: React.FC<GeneralTabProps> = ({
               onValueChange={onMediaPlayerCacheChange}
               hint={t('general.playback.cacheHint')}
             />
+            {mediaPlayerCache && <MediaCacheStatus />}
 
             <View style={styles.rotationSpacer} />
             <SettingsInput

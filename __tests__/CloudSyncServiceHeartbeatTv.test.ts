@@ -9,7 +9,7 @@
 // A module of its own so the helpers below do not collide with another test file's
 export {};
 
-const { NativeModules } = require('react-native');
+const { NativeModules, Platform } = require('react-native');
 NativeModules.HttpServerModule = {
   executeNativeCommand: jest.fn(),
   captureScreenshotBase64: jest.fn(),
@@ -104,5 +104,54 @@ describe('heartbeat telemetry on a TV', () => {
     const body = await heartbeatBody(statusWith({ wifi: { ethernet: undefined } }));
 
     expect(body.network.ethernet_connected).toBe(false);
+  });
+});
+
+
+describe('form factor reported to the cloud', () => {
+  const original = Platform.isTV;
+  const setTv = (value: boolean) => {
+    Object.defineProperty(Platform, 'isTV', { configurable: true, get: () => value });
+  };
+
+  afterEach(() => {
+    Object.defineProperty(Platform, 'isTV', { configurable: true, get: () => original });
+  });
+
+  /** The enrolment request the cloud would receive (a refusal stops the app after the fetch) */
+  async function enrolBody() {
+    let body: any;
+    (globalThis as any).fetch = jest.fn((_url: string, init: any) => {
+      body = JSON.parse(init.body);
+      return Promise.resolve({ ok: false, status: 400, json: () => Promise.resolve({ error: 'refused' }) });
+    });
+    await CloudSyncService.enroll('https://cloud.test', 'TOKEN1', { model: 'Chromecast', manufacturer: 'Google' });
+    return body;
+  }
+
+  it('says tablet in the heartbeat on a tablet', async () => {
+    setTv(false);
+    const body = await heartbeatBody(statusWith({}));
+    expect(body.system.form_factor).toBe('tablet');
+  });
+
+  it('says tv in the heartbeat on a TV', async () => {
+    setTv(true);
+    const body = await heartbeatBody(statusWith({}));
+    expect(body.system.form_factor).toBe('tv');
+  });
+
+  it('says tv when it enrols on a TV, and keeps what the caller sent', async () => {
+    setTv(true);
+    const body = await enrolBody();
+    expect(body.device_info.form_factor).toBe('tv');
+    expect(body.device_info.model).toBe('Chromecast');
+    expect(body.token).toBe('TOKEN1');
+  });
+
+  it('says tablet when it enrols on a tablet', async () => {
+    setTv(false);
+    const body = await enrolBody();
+    expect(body.device_info.form_factor).toBe('tablet');
   });
 });

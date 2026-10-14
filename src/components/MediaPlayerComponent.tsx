@@ -27,6 +27,8 @@ interface MediaPlayerComponentProps {
   muteVideo: boolean;
   /** Play from files kept on the device, so a network drop does not stop the playlist */
   cacheOffline?: boolean;
+  /** Largest the cache may grow, in megabytes */
+  cacheLimitMb?: number;
   onUserInteraction?: (event?: { isTap?: boolean; x?: number; y?: number }) => void;
 }
 
@@ -43,12 +45,13 @@ const MediaPlayerComponent: React.FC<MediaPlayerComponentProps> = ({
   transitionDuration,
   muteVideo,
   cacheOffline = false,
+  cacheLimitMb,
   onUserInteraction,
 }) => {
   const { t } = useTranslation();
   const webViewRef = useRef<WebView>(null);
   // With the cache off this is the playlist as configured, ready at once
-  const { items, ready } = useCachedMediaItems(configuredItems, cacheOffline);
+  const { items, ready } = useCachedMediaItems(configuredItems, cacheOffline, cacheLimitMb);
 
   const htmlContent = useMemo(() => {
     if (!items || items.length === 0) {

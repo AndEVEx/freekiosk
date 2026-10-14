@@ -44,6 +44,11 @@ function Probe({ list, enabled }: { list: any[]; enabled: boolean }) {
   return null;
 }
 
+function LimitProbe({ list, enabled, limitMb }: { list: any[]; enabled: boolean; limitMb: number }) {
+  useCachedMediaItems(list, enabled, limitMb);
+  return null;
+}
+
 async function render(list: any[], enabled: boolean) {
   let renderer: any;
   await act(async () => {
@@ -94,7 +99,7 @@ describe('useCachedMediaItems', () => {
     expect(latest!.items[1].url).toBe(B); // not on the device yet: plays from its URL
     expect(latest!.items[1].duration).toBe(5);
     expect(mockGetCached).toHaveBeenCalledWith([A, B]);
-    expect(mockSync).toHaveBeenCalledWith([A, B]);
+    expect(mockSync).toHaveBeenCalledWith([A, B], 2048 * 1024 * 1024);
   });
 
   it('is not ready until the look-up of the device has answered', async () => {
@@ -194,6 +199,35 @@ describe('useCachedMediaItems', () => {
     await flush();
 
     expect(mockGetCached).toHaveBeenCalledTimes(1);
+  });
+
+  it('hands the native module the limit it was given, in bytes', async () => {
+    mockGetCached.mockResolvedValue({});
+    mockSync.mockReturnValue(new Promise(() => {}));
+
+    let renderer: any;
+    await act(async () => {
+      renderer = TestRenderer.create(React.createElement(LimitProbe, { list: items, enabled: true, limitMb: 5 }));
+    });
+    await flush();
+
+    expect(mockSync).toHaveBeenCalledWith([A, B], 5 * 1024 * 1024);
+    renderer.unmount();
+  });
+
+  it('starts again when the limit changes', async () => {
+    mockGetCached.mockResolvedValue({});
+    mockSync.mockReturnValue(new Promise(() => {}));
+    let renderer: any;
+    await act(async () => {
+      renderer = TestRenderer.create(React.createElement(LimitProbe, { list: items, enabled: true, limitMb: 5 }));
+    });
+    await flush();
+
+    await act(async () => { renderer.update(React.createElement(LimitProbe, { list: items, enabled: true, limitMb: 50 })); });
+    await flush();
+
+    expect(mockSync).toHaveBeenLastCalledWith([A, B], 50 * 1024 * 1024);
   });
 
   it('stops checking once it is unmounted', async () => {

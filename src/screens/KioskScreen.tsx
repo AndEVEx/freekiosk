@@ -6,7 +6,7 @@ import { useIsFocused, useFocusEffect } from '@react-navigation/native';
 import WebViewComponent, { WebViewComponentRef } from '../components/WebViewComponent';
 import { WebView } from 'react-native-webview';
 import MediaPlayerComponent from '../components/MediaPlayerComponent';
-import { defaultMediaCacheEnabled } from '../utils/MediaCache';
+import { defaultMediaCacheEnabled, DEFAULT_MEDIA_CACHE_LIMIT_MB } from '../utils/MediaCache';
 import StatusBar from '../components/StatusBar';
 import MotionDetector from '../components/MotionDetector';
 import ProximityDetectionModule, { onProximityNear as onProximityNearEvent } from '../utils/ProximityDetectionModule';
@@ -273,6 +273,7 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
   const [mediaPlayerTransitionDuration, setMediaPlayerTransitionDuration] = useState<number>(500);
   const [mediaPlayerMute, setMediaPlayerMute] = useState<boolean>(false);
   const [mediaPlayerCache, setMediaPlayerCache] = useState<boolean>(defaultMediaCacheEnabled());
+  const [mediaPlayerCacheLimitMb, setMediaPlayerCacheLimitMb] = useState<number>(DEFAULT_MEDIA_CACHE_LIMIT_MB);
 
   // AppState listener - detects when the app returns to the foreground
   useEffect(() => {
@@ -2106,6 +2107,7 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
         const mpTransitionDuration = num(K.MEDIA_PLAYER_TRANSITION_DURATION, 500);
         const mpMute = bool(K.MEDIA_PLAYER_MUTE, false);
         const mpCache = bool(K.MEDIA_PLAYER_CACHE, defaultMediaCacheEnabled());
+        const mpCacheLimitMb = num(K.MEDIA_PLAYER_CACHE_LIMIT_MB, DEFAULT_MEDIA_CACHE_LIMIT_MB);
         setMediaPlayerItems(mpItems);
         setMediaPlayerAutoPlay(mpAutoPlay);
         setMediaPlayerLoop(mpLoop);
@@ -2118,6 +2120,7 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
         setMediaPlayerTransitionDuration(mpTransitionDuration);
         setMediaPlayerMute(mpMute);
         setMediaPlayerCache(mpCache);
+        setMediaPlayerCacheLimitMb(mpCacheLimitMb);
         console.log('[KioskScreen] Media player loaded:', mpItems.length, 'items');
       }
 
@@ -3106,6 +3109,7 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
             transitionDuration={mediaPlayerTransitionDuration}
             muteVideo={mediaPlayerMute}
             cacheOffline={mediaPlayerCache}
+            cacheLimitMb={mediaPlayerCacheLimitMb}
             onUserInteraction={onUserInteraction}
           />
         </>

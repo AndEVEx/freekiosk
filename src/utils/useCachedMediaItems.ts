@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { MediaItem } from '../types/mediaPlayer';
 import MediaCacheModule, {
+  DEFAULT_MEDIA_CACHE_LIMIT_MB,
   collectCacheableUrls,
   sameCacheMap,
   withCachedUrls,
@@ -28,6 +29,7 @@ export const MEDIA_CACHE_RECHECK_MS = 10 * 60 * 1000;
 export function useCachedMediaItems(
   items: MediaItem[],
   enabled: boolean,
+  limitMb: number = DEFAULT_MEDIA_CACHE_LIMIT_MB,
 ): { items: MediaItem[]; ready: boolean } {
   const [cached, setCached] = useState<MediaCacheMap>({});
   const [ready, setReady] = useState<boolean>(!enabled);
@@ -45,6 +47,7 @@ export function useCachedMediaItems(
     }
     const cache = MediaCacheModule;
     const urls: string[] = JSON.parse(urlsKey);
+    const limitBytes = Math.max(1, limitMb) * 1024 * 1024;
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | null = null;
     setReady(false);
@@ -57,7 +60,7 @@ export function useCachedMediaItems(
 
     const syncOnce = async () => {
       try {
-        apply(await cache.sync(urls));
+        apply(await cache.sync(urls, limitBytes));
       } catch {
         // Offline or the check failed: what is on the device stays
       }
@@ -79,7 +82,7 @@ export function useCachedMediaItems(
       cancelled = true;
       if (timer) clearTimeout(timer);
     };
-  }, [enabled, urlsKey]);
+  }, [enabled, urlsKey, limitMb]);
 
   const playable = useMemo(
     () => (enabled ? withCachedUrls(items, cached) : items),

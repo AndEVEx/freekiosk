@@ -40,6 +40,10 @@
     "playback": {
       "cache": "Play from the device (offline cache)",
       "cacheHint": "Downloads each video and image to the device and plays it from there, so a network outage does not stop the playlist. Files are checked again every 10 minutes, a changed file is downloaded again, and a file removed from the playlist is deleted. The first play of a new item waits for its download.",
+      "cacheStats": "On the device: {{files}} files, {{size}}",
+      "cacheStatsPartial": "On the device: {{files}} files, {{size}} (+ {{partial}} of a download in progress)",
+      "cacheEmpty": "Nothing on the device yet",
+      "cacheClear": "Clear the cache",
       "title": "Playback",
       "autoPlay": "Auto Play",
       "autoPlayHint": "Automatically start playing when the screen loads",

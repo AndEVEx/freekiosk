@@ -199,6 +199,7 @@ export const KEYS = {
   MEDIA_PLAYER_TRANSITION_DURATION: '@kiosk_media_player_transition_duration',
   MEDIA_PLAYER_MUTE: '@kiosk_media_player_mute',
   MEDIA_PLAYER_CACHE: '@kiosk_media_player_cache',
+  MEDIA_PLAYER_CACHE_LIMIT_MB: '@kiosk_media_player_cache_limit_mb',
   // Legacy keys for backward compatibility
   SCREENSAVER_DELAY: '@screensaver_delay',
   MOTION_DETECTION_ENABLED: '@motion_detection_enabled',
@@ -568,6 +569,7 @@ export const StorageService = {
         KEYS.MEDIA_PLAYER_TRANSITION_DURATION,
         KEYS.MEDIA_PLAYER_MUTE,
         KEYS.MEDIA_PLAYER_CACHE,
+        KEYS.MEDIA_PLAYER_CACHE_LIMIT_MB,
         // Notifications
         KEYS.ALLOW_NOTIFICATIONS,
         // System Info (audio fix)

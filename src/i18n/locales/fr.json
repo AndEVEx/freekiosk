@@ -40,6 +40,10 @@
     "playback": {
       "cache": "Lire depuis l'appareil (cache hors ligne)",
       "cacheHint": "Télécharge chaque vidéo et chaque image sur l'appareil et la lit depuis là, pour qu'une coupure réseau n'arrête pas la playlist. Les fichiers sont revérifiés toutes les 10 minutes, un fichier modifié est retéléchargé, et un fichier retiré de la playlist est supprimé. Le premier passage d'un nouvel élément attend son téléchargement.",
+      "cacheStats": "Sur l'appareil : {{files}} fichiers, {{size}}",
+      "cacheStatsPartial": "Sur l'appareil : {{files}} fichiers, {{size}} (+ {{partial}} d'un téléchargement en cours)",
+      "cacheEmpty": "Rien sur l'appareil pour l'instant",
+      "cacheClear": "Vider le cache",
       "title": "Lecture",
       "autoPlay": "Lecture automatique",
       "autoPlayHint": "Démarrer automatiquement la lecture au chargement de l'écran",

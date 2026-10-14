@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { DeviceEventEmitter, NativeModules } from 'react-native';
+import { DeviceEventEmitter, NativeModules, Platform } from 'react-native';
 
 import { StorageService, KEYS } from './storage';
 import DeviceControlService from '../services/DeviceControlService';
@@ -19,6 +19,9 @@ import {
   importSensitiveConfig,
   saveCloudCredentials,
 } from './secureStorage';
+
+/** What kind of screen this is, so the cloud can label a TV and drop what a TV does not have */
+const formFactor = (): 'tv' | 'tablet' => (Platform.isTV ? 'tv' : 'tablet');
 
 export const CONFIG_UPDATED_EVENT = 'FREEKIOSK_CONFIG_UPDATED';
 export const FORCE_UNENROLL_EVENT = 'FREEKIOSK_FORCE_UNENROLL';
@@ -247,6 +250,7 @@ class CloudSyncServiceClass {
             model: status.device.model,
             manufacturer: status.device.manufacturer,
             android_version: status.device.androidVersion,
+            form_factor: formFactor(),
             free_storage_mb: status.device.freeStorageMb,
             free_memory_mb: status.device.freeMemoryMb,
             uptime_seconds: status.device.uptime,
@@ -333,7 +337,7 @@ class CloudSyncServiceClass {
       const response = await fetch(`${url}/api/v1/devices/enroll/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, device_info: { ...deviceInfo, capabilities } }),
+        body: JSON.stringify({ token, device_info: { ...deviceInfo, capabilities, form_factor: formFactor() } }),
       });
 
       const data = await response.json();
