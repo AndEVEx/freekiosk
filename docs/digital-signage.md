@@ -23,10 +23,13 @@ a minute. When you remove a screen from a playlist, it goes back to the mode it 
 ## Files from the media library
 
 A playlist item can be a file the customer uploaded to the cloud's **media library**, instead of an
-address they host themselves. For the device nothing changes: the manifest gives the file's `https`
-address, and the offline cache downloads and keeps it like any other item. Those addresses are
-**stable and never reused** (a file in the library is never overwritten), so a file kept on the
-device is the right one for good, and a download that is resumed cannot mix two versions.
+address they host themselves. For the device the manifest looks the same: it gives the file's `https`
+address, and the offline cache downloads and keeps it like any other item. The files are private, so
+that address is **signed** and valid 7 days. Its path is **stable and never reused** (a file in the
+library is never overwritten), so a file kept on the device is the right one for good, and a download
+that is resumed cannot mix two versions. The cache leaves the signature (the `X-Amz-*` parameters) out
+when it names a file, so a renewed manifest, which carries new signatures, downloads nothing again; the
+cloud renews it every 3 days.
 
 Checked on a tablet emulator, against a real library: a playlist of two images and a video, made from
 the dashboard, was played in order from the cloud's storage, and the three files were in the device's

@@ -45,9 +45,24 @@ class MediaCacheModule(reactContext: ReactApplicationContext) :
         // A half download that nobody finished in this long is not worth keeping
         private const val STALE_PART_MS = 7L * 24 * 60 * 60 * 1000
 
+        /**
+         * The URL without its signature. A signed address (S3, "X-Amz-..." parameters) is a new string
+         * at every manifest, but names the same file: the cache must keep its copy, not download again.
+         * Any other parameter stays, since it may well tell two files apart.
+         */
+        fun withoutSignature(url: String): String {
+            val queryStart = url.indexOf('?')
+            if (queryStart < 0) return url
+            val fragmentStart = url.indexOf('#', queryStart).let { if (it < 0) url.length else it }
+            val kept = url.substring(queryStart + 1, fragmentStart).split('&')
+                .filter { it.isNotEmpty() && !it.startsWith("X-Amz-", ignoreCase = true) }
+            val query = if (kept.isEmpty()) "" else "?" + kept.joinToString("&")
+            return url.substring(0, queryStart) + query + url.substring(fragmentStart)
+        }
+
         /** File name for a URL: a hash (so any URL is a safe name) and the URL's extension. */
         fun cacheName(url: String): String {
-            val digest = MessageDigest.getInstance("SHA-256").digest(url.toByteArray(Charsets.UTF_8))
+            val digest = MessageDigest.getInstance("SHA-256").digest(withoutSignature(url).toByteArray(Charsets.UTF_8))
             val hash = digest.joinToString("") { "%02x".format(it) }.take(32)
             val path = try { Uri.parse(url).path ?: "" } catch (e: Exception) { "" }
             val ext = path.substringAfterLast('.', "").lowercase().filter { it.isLetterOrDigit() }.take(8)
