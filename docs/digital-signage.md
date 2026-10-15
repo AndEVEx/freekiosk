@@ -20,6 +20,20 @@ When you change the playlist (add, remove, reorder, change a duration) the scree
 a minute. When you remove a screen from a playlist, it goes back to the mode it was in before
 (for example a web page).
 
+## Files from the media library
+
+A playlist item can be a file the customer uploaded to the cloud's **media library**, instead of an
+address they host themselves. For the device nothing changes: the manifest gives the file's `https`
+address, and the offline cache downloads and keeps it like any other item. Those addresses are
+**stable and never reused** (a file in the library is never overwritten), so a file kept on the
+device is the right one for good, and a download that is resumed cannot mix two versions.
+
+Checked on a tablet emulator, against a real library: a playlist of two images and a video, made from
+the dashboard, was played in order from the cloud's storage, and the three files were in the device's
+cache with exactly the sizes of the library's files. Not checked: a large video (the cache was
+exercised on large files separately), a device offline from the start with a library playlist, and a
+physical device.
+
 ## Schedules
 
 A playlist can play at certain times instead of the screen's default one: on chosen **days of the
