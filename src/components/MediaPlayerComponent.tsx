@@ -140,7 +140,7 @@ function generateEmptyHTML(bgColor: string): string {
   return `<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><style>*{margin:0;padding:0}body{background:${bgColor};display:flex;align-items:center;justify-content:center;height:100vh;color:#fff;font-family:sans-serif;text-align:center}h1{font-size:48px;margin-bottom:16px}p{font-size:18px;opacity:0.7}</style></head><body><div><h1>🎬</h1><p>No media configured</p></div></body></html>`;
 }
 
-function generatePlayerHTML(settings: {
+export function generatePlayerHTML(settings: {
   items: MediaItem[];
   autoPlay: boolean;
   loop: boolean;
@@ -169,12 +169,18 @@ function generatePlayerHTML(settings: {
     unattended,
   } = settings;
 
+  // This goes inside a <script>: a title or an address holding "</script>" would end it and let its
+  // author run code in the player, so "<" and the two line separators JavaScript reads as newlines
+  // are written as unicode escapes (still the same string once parsed)
   const itemsJSON = JSON.stringify(items.map(i => ({
     url: i.url,
     type: i.type,
     duration: i.duration || imageDuration,
     title: i.title || '',
-  })));
+  }))).replace(
+    new RegExp('[<' + String.fromCharCode(0x2028, 0x2029) + ']', 'g'),
+    c => String.fromCharCode(92) + 'u' + c.charCodeAt(0).toString(16).padStart(4, '0'),
+  );
 
   return `<!DOCTYPE html>
 <html>

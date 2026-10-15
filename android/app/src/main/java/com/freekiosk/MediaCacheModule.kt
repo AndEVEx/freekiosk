@@ -81,6 +81,9 @@ class MediaCacheModule(reactContext: ReactApplicationContext) :
 
     // One download at a time: sequential keeps the bandwidth for the playlist that is playing
     private val executor = Executors.newSingleThreadExecutor()
+    // Reading what is on the device must not wait behind a download, however long: a new playlist
+    // would otherwise show a blank screen until the file being downloaded is done
+    private val reader = Executors.newSingleThreadExecutor()
 
     override fun getName(): String = NAME
 
@@ -96,7 +99,7 @@ class MediaCacheModule(reactContext: ReactApplicationContext) :
     /** Local file URIs of the items that are already on the device. No network. */
     @ReactMethod
     fun getCached(urls: ReadableArray, promise: Promise) {
-        executor.execute {
+        reader.execute {
             try {
                 val dir = cacheDir()
                 val result = Arguments.createMap()
@@ -163,7 +166,7 @@ class MediaCacheModule(reactContext: ReactApplicationContext) :
     /** Number of cached files, their total size, what is half downloaded, for the settings. */
     @ReactMethod
     fun getStats(promise: Promise) {
-        executor.execute {
+        reader.execute {
             try {
                 val all = cacheDir().listFiles()?.filter { it.isFile } ?: emptyList()
                 val files = all.filter { !it.name.endsWith(".meta") && !it.name.endsWith(".part") }
@@ -277,7 +280,7 @@ class MediaCacheModule(reactContext: ReactApplicationContext) :
             val lastModified = connection.getHeaderField("Last-Modified") ?: ""
             if (!resumed) {
                 partMeta.writeText(
-                    JSONObject().put("url", url).put("etag", etag).put("lastModified", lastModified).toString()
+                    JSONObject().put("url", withoutSignature(url)).put("etag", etag).put("lastModified", lastModified).toString()
                 )
             }
 
@@ -295,6 +298,12 @@ class MediaCacheModule(reactContext: ReactApplicationContext) :
                         if (expectedTotal < 0 && sizeWithout(dir, name) + offset + written > limit) {
                             part.delete(); partMeta.delete()
                             throw IllegalStateException("cache limit reached while downloading")
+                        }
+                        // Without a length (chunked or compressed answer) the space cannot be checked
+                        // beforehand: keep watching it, so a stream never fills the device
+                        if (expectedTotal < 0 && dir.usableSpace < MIN_FREE_BYTES) {
+                            part.delete(); partMeta.delete()
+                            throw IllegalStateException("not enough free space while downloading")
                         }
                     }
                     raf.fd.sync()
@@ -318,7 +327,7 @@ class MediaCacheModule(reactContext: ReactApplicationContext) :
             partMeta.delete()
             val partVersion = partInfo
             val info = JSONObject()
-                .put("url", url)
+                .put("url", withoutSignature(url))
                 // A resumed response may omit the validators: the half file's own are the file's
                 .put("etag", etag.ifEmpty { partVersion?.optString("etag") ?: "" })
                 .put("lastModified", lastModified.ifEmpty { partVersion?.optString("lastModified") ?: "" })
