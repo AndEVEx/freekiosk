@@ -39,7 +39,7 @@
     },
     "playback": {
       "cache": "Reproduzir do dispositivo (cache offline)",
-      "cacheHint": "Baixa cada vídeo e cada imagem para o dispositivo e reproduz de lá, para que uma queda de rede não interrompa a playlist. Os arquivos são verificados novamente a cada 10 minutos, um arquivo alterado é baixado de novo e um arquivo removido da playlist é apagado. A primeira reprodução de um novo item aguarda o download.",
+      "cacheHint": "Baixa cada vídeo e cada imagem para o dispositivo e reproduz de lá, para que uma queda de rede não interrompa a playlist. Os arquivos são verificados novamente a cada 10 minutos, um arquivo alterado é baixado de novo e um arquivo removido da playlist é apagado. Um novo item ainda não presente no dispositivo é reproduzido a partir da URL enquanto é baixado: sua primeira reprodução precisa da rede.",
       "unattended": "Reprodução sem supervisão",
       "unattendedHint": "Para uma tela que ninguém monitora. Nenhuma mensagem de erro é exibida na tela, e um item que não carrega, ou que trava, por 30 segundos é ignorado. Ativado por padrão em uma TV.",
       "cacheStats": "No dispositivo: {{files}} arquivos, {{size}}",

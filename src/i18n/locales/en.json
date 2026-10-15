@@ -39,7 +39,7 @@
     },
     "playback": {
       "cache": "Play from the device (offline cache)",
-      "cacheHint": "Downloads each video and image to the device and plays it from there, so a network outage does not stop the playlist. Files are checked again every 10 minutes, a changed file is downloaded again, and a file removed from the playlist is deleted. The first play of a new item waits for its download.",
+      "cacheHint": "Downloads each video and image to the device and plays it from there, so a network outage does not stop the playlist. Files are checked again every 10 minutes, a changed file is downloaded again, and a file removed from the playlist is deleted. A new item that is not on the device yet plays from its URL while it downloads, so its first play needs the network.",
       "unattended": "Unattended playback",
       "unattendedHint": "For a screen nobody watches. No error message is shown on screen, and an item that does not load, or freezes, for 30 seconds is skipped. On by default on a TV.",
       "cacheStats": "On the device: {{files}} files, {{size}}",

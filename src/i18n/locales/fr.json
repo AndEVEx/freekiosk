@@ -39,7 +39,7 @@
     },
     "playback": {
       "cache": "Lire depuis l'appareil (cache hors ligne)",
-      "cacheHint": "Télécharge chaque vidéo et chaque image sur l'appareil et la lit depuis là, pour qu'une coupure réseau n'arrête pas la playlist. Les fichiers sont revérifiés toutes les 10 minutes, un fichier modifié est retéléchargé, et un fichier retiré de la playlist est supprimé. Le premier passage d'un nouvel élément attend son téléchargement.",
+      "cacheHint": "Télécharge chaque vidéo et chaque image sur l'appareil et la lit depuis là, pour qu'une coupure réseau n'arrête pas la playlist. Les fichiers sont revérifiés toutes les 10 minutes, un fichier modifié est retéléchargé, et un fichier retiré de la playlist est supprimé. Un nouvel élément pas encore présent sur l'appareil est lu depuis son URL pendant son téléchargement : son premier passage a donc besoin du réseau.",
       "unattended": "Lecture sans surveillance",
       "unattendedHint": "Pour un écran que personne ne surveille. Aucun message d'erreur n'est affiché à l'écran, et un élément qui ne charge pas, ou qui se fige, pendant 30 secondes est sauté. Activé par défaut sur un téléviseur.",
       "cacheStats": "Sur l'appareil : {{files}} fichiers, {{size}}",
