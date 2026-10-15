@@ -7,6 +7,7 @@ import WebViewComponent, { WebViewComponentRef } from '../components/WebViewComp
 import { WebView } from 'react-native-webview';
 import MediaPlayerComponent from '../components/MediaPlayerComponent';
 import { defaultMediaCacheEnabled, defaultMediaUnattended, DEFAULT_MEDIA_CACHE_LIMIT_MB } from '../utils/MediaCache';
+import { SignagePlaylist } from '../utils/SignagePlaylist';
 import StatusBar from '../components/StatusBar';
 import MotionDetector from '../components/MotionDetector';
 import ProximityDetectionModule, { onProximityNear as onProximityNearEvent } from '../utils/ProximityDetectionModule';
@@ -2096,7 +2097,11 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
       
       // Load Media Player settings
       if (savedDisplayMode === 'media_player') {
-        const mpItems = jsonParse(K.MEDIA_PLAYER_ITEMS, []) as MediaItem[];
+        // A playlist assigned by FreeKiosk Cloud replaces the list set on the device
+        const cloudPlaylist = await SignagePlaylist.getActive();
+        const mpItems = cloudPlaylist
+          ? cloudPlaylist.items
+          : (jsonParse(K.MEDIA_PLAYER_ITEMS, []) as MediaItem[]);
         const mpAutoPlay = bool(K.MEDIA_PLAYER_AUTOPLAY, true);
         const mpLoop = bool(K.MEDIA_PLAYER_LOOP, true);
         const mpShuffle = bool(K.MEDIA_PLAYER_SHUFFLE, false);

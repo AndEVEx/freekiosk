@@ -6,6 +6,7 @@ import DeviceControlService from '../services/DeviceControlService';
 import { CloudCommandService } from './CloudCommandService';
 import { getCapabilities } from './capabilities';
 import { getMediaCacheReport } from './MediaCacheReport';
+import { SignagePlaylist } from './SignagePlaylist';
 import KioskModule from './KioskModule';
 import {
   CloudCredentials,
@@ -101,6 +102,8 @@ interface HeartbeatResponse {
   sensitive_config: SensitiveConfig | null;
   config_version: number;
   force_unenroll: boolean;
+  // Digital signage: absent from an older cloud, null when the device has no playlist
+  playlist_version?: string | null;
 }
 
 async function simpleHash(str: string): Promise<string> {
@@ -216,6 +219,8 @@ class CloudSyncServiceClass {
         // Refresh the capability list every heartbeat so granting a permission
         // after enrollment is reflected in the dashboard on the next tick.
         const capabilities = await getCapabilities().catch(() => [] as string[]);
+        // Undefined (nothing reported) until a cloud has spoken of playlists
+        const signageVersion = await SignagePlaylist.getVersionForReport();
         telemetry = {
           // No battery key on a TV or a box: the cloud keeps it empty instead of storing
           // a made-up level and raising a battery alert
@@ -257,6 +262,8 @@ class CloudSyncServiceClass {
             uptime_seconds: status.device.uptime,
             // Only once the offline cache has been on: any other device sends what it always did
             ...(getMediaCacheReport() ? { media_cache: getMediaCacheReport() } : {}),
+            // The playlist version this screen plays, so the dashboard can tell it is up to date
+            ...(signageVersion !== undefined ? { signage_playlist_version: signageVersion } : {}),
           },
         };
       } catch {
@@ -312,6 +319,12 @@ class CloudSyncServiceClass {
         DeviceEventEmitter.emit(CONFIG_UPDATED_EVENT);
       } else if (data.config_version > configVersion) {
         await StorageService.saveConfigVersion(data.config_version);
+      }
+
+      // Digital signage: a new playlist version means a new manifest to download. A failed
+      // download is tried again at the next heartbeat.
+      if (await SignagePlaylist.sync(c, data.playlist_version)) {
+        DeviceEventEmitter.emit(CONFIG_UPDATED_EVENT);
       }
 
       // Pull + execute any pending commands / APK updates. Fire-and-forget so

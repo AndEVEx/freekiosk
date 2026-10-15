@@ -22,6 +22,7 @@
       "webview": "• Configure the URL of the web page to display\n• Set a secure PIN code\n• Enable \"Lock Mode\" for full kiosk mode\n• Tap 5 times on the secret button to access settings (default: bottom-right)\n• Enter PIN code to unlock"
     },
     "mediaPlaylist": {
+      "cloudManaged": "This screen plays the playlist \"{{name}}\" from FreeKiosk Cloud. The list below is not used while that playlist is assigned.",
       "noFilePicker": "This device has no file picker (usual on a TV), so videos and images cannot be added from its storage. Use a URL instead.",
       "title": "Media Playlist",
       "info": "Add media from your device or via URL.\nSupported: MP4, WebM, OGG (video) • JPG, PNG, GIF, WebP, SVG (image)\n\nLocal files are copied to app storage for reliable playback.",

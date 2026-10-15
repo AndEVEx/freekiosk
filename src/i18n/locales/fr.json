@@ -22,6 +22,7 @@
       "webview": "• Configurez l'URL de la page web à afficher\n• Définissez un code PIN sécurisé\n• Activez le « Mode verrouillé » pour le mode kiosque complet\n• Appuyez 5 fois sur le bouton secret pour accéder aux réglages (par défaut : en bas à droite)\n• Entrez le code PIN pour déverrouiller"
     },
     "mediaPlaylist": {
+      "cloudManaged": "Cet écran joue la playlist « {{name}} » de FreeKiosk Cloud. La liste ci-dessous n'est pas utilisée tant que cette playlist est affectée.",
       "noFilePicker": "Cet appareil n'a pas de sélecteur de fichiers (fréquent sur un téléviseur) : on ne peut pas ajouter de vidéos ou d'images depuis son stockage. Utilisez une URL.",
       "title": "Playlist multimédia",
       "info": "Ajoutez des médias depuis votre appareil ou via une URL.\nFormats pris en charge : MP4, WebM, OGG (vidéo) • JPG, PNG, GIF, WebP, SVG (image)\n\nLes fichiers locaux sont copiés dans le stockage de l'application pour une lecture fiable.",

@@ -90,6 +90,7 @@ adb shell dpm set-device-owner com.freekiosk/.DeviceAdminReceiver
 | **MQTT** | Real-time telemetry and Home Assistant discovery | [Read →](MQTT.md) |
 | **ADB Configuration** | Headless provisioning and scripting | [Read →](adb-configuration.md) |
 | **Android TV** | Android TV, Google TV and Fire TV: what works, setup, limits | [Read →](android-tv.md) |
+| **Digital signage** | Playlists built in FreeKiosk Cloud and played by a screen | [Read →](digital-signage.md) |
 
 ### Advanced Topics
 

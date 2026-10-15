@@ -29,6 +29,7 @@ import { generateMediaItemId, detectMediaType, isLocalMedia, getMediaDisplayName
 import FilePickerModule from '../../../utils/FilePickerModule';
 import { useFilePickerAvailable } from '../../../utils/useFilePickerAvailable';
 import MediaCacheStatus from '../../../components/settings/MediaCacheStatus';
+import SignageManagedNotice from '../../../components/settings/SignageManagedNotice';
 import type { PickedFile } from '../../../utils/FilePickerModule';
 import { useTranslation } from 'react-i18next';
 import type { SupportedLanguage } from '../../../i18n';
@@ -381,6 +382,7 @@ const GeneralTab: React.FC<GeneralTabProps> = ({
         <>
           {/* Media Items / Playlist */}
           <SettingsSection title={t('general.mediaPlaylist.title')} icon="play-circle-outline">
+            <SignageManagedNotice />
             <SettingsInfoBox variant="info">
               <Text style={styles.infoText}>
                 {t('general.mediaPlaylist.info')}

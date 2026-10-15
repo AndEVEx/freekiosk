@@ -22,6 +22,7 @@
       "webview": "• Configure a URL da página web a ser exibida\n• Defina um código PIN seguro\n• Ative o \"Modo Bloqueio\" para o modo quiosque completo\n• Toque 5 vezes no botão secreto para acessar as configurações (padrão: canto inferior direito)\n• Digite o código PIN para desbloquear"
     },
     "mediaPlaylist": {
+      "cloudManaged": "Esta tela reproduz a playlist \"{{name}}\" do FreeKiosk Cloud. A lista abaixo não é usada enquanto essa playlist estiver atribuída.",
       "noFilePicker": "Este dispositivo não tem seletor de arquivos (comum em uma TV), então não é possível adicionar vídeos e imagens do armazenamento. Use uma URL.",
       "title": "Playlist de mídia",
       "info": "Adicione mídias do seu dispositivo ou por URL.\nFormatos aceitos: MP4, WebM, OGG (vídeo) • JPG, PNG, GIF, WebP, SVG (imagem)\n\nOs arquivos locais são copiados para o armazenamento do aplicativo para uma reprodução confiável.",
