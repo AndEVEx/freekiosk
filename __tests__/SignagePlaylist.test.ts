@@ -19,7 +19,7 @@ NativeModules.HttpServerModule = {
 
 const AsyncStorage = require('@react-native-async-storage/async-storage');
 const { StorageService } = require('../src/utils/storage');
-const { SignagePlaylist, manifestToItems } = require('../src/utils/SignagePlaylist');
+const { SignagePlaylist, manifestToItems, parseSchedule } = require('../src/utils/SignagePlaylist');
 
 const store = AsyncStorage.default ?? AsyncStorage;
 const CREDS = { cloudUrl: 'https://cloud.test', deviceId: 'dev-1', apiKey: 'fk_test' };
@@ -206,5 +206,134 @@ describe('manifestToItems', () => {
     expect(manifestToItems(undefined)).toEqual([]);
     expect(manifestToItems(null)).toEqual([]);
     expect(manifestToItems('nope' as any)).toEqual([]);
+  });
+});
+
+// 2026-11-02 is a Monday
+const at = (day: number, hour = 0, minute = 0) => new Date(2026, 10, day, hour, minute);
+const LUNCH_ITEM = { id: 'l1', kind: 'image', url: 'https://cdn.test/lunch.png', title: 'Lunch', duration_seconds: 6 };
+const scheduled = (overrides: any = {}) => ({
+  version: 's:abc',
+  playlist: { id: 'menu', name: 'Menu' },
+  items: [VIDEO],
+  schedule: {
+    default_playlist: 'menu',
+    playlists: {
+      menu: { name: 'Menu', items: [VIDEO] },
+      lunch: { name: 'Lunch', items: [LUNCH_ITEM, VIDEO] },
+    },
+    rules: [{ playlist: 'lunch', days: [1, 2, 3, 4, 5], start: '11:00', end: '14:00', from: null, to: null, priority: 2 }],
+  },
+  ...overrides,
+});
+
+describe('a schedule from the cloud', () => {
+  beforeEach(async () => {
+    await store.clear();
+    (globalThis as any).fetch = jest.fn();
+  });
+
+  it('plays the playlist the clock asks for, and follows it as the day goes by', async () => {
+    serve([{ body: scheduled() }]);
+    await SignagePlaylist.sync(CREDS, 's:abc');
+
+    const morning = await SignagePlaylist.getActive(at(2, 9, 0));
+    expect(morning.id).toBe('menu');
+    expect(morning.items.map((i: any) => i.id)).toEqual(['i1']);
+    expect(morning.scheduled).toBe(true);
+
+    const noon = await SignagePlaylist.getActive(at(2, 12, 0));
+    expect(noon.id).toBe('lunch');
+    expect(noon.name).toBe('Lunch');
+    expect(noon.items.map((i: any) => i.id)).toEqual(['l1', 'i1']);
+    expect(noon.items[0].duration).toBe(6);
+
+    expect((await SignagePlaylist.getActive(at(2, 15, 0))).id).toBe('menu');
+    expect((await SignagePlaylist.getActive(at(7, 12, 0))).id).toBe('menu'); // Saturday: no rule
+  });
+
+  it('is a blank screen, on purpose, when nothing is due and there is no default', async () => {
+    const body = scheduled();
+    body.schedule.default_playlist = null;
+    serve([{ body }]);
+    await SignagePlaylist.sync(CREDS, 's:abc');
+    const idle = await SignagePlaylist.getActive(at(2, 9, 0));
+    expect(idle.items).toEqual([]);
+    expect(idle.id).toBe('');
+    expect(idle.scheduled).toBe(true); // not "no cloud playlist": the player stays blank
+  });
+
+  it('lists every file of the schedule once, to keep them all in the cache', async () => {
+    serve([{ body: scheduled() }]);
+    await SignagePlaylist.sync(CREDS, 's:abc');
+    const active = await SignagePlaylist.getActive(at(2, 9, 0));
+    expect(active.prefetch.map((i: any) => i.url).sort()).toEqual(
+      ['https://cdn.test/a.mp4', 'https://cdn.test/lunch.png'].sort(),
+    );
+  });
+
+  it('keeps working offline: the schedule is on the device and the clock does the rest', async () => {
+    serve([{ body: scheduled() }]);
+    await SignagePlaylist.sync(CREDS, 's:abc');
+    (globalThis as any).fetch = jest.fn(() => Promise.reject(new Error('offline')));
+    expect((await SignagePlaylist.getActive(at(3, 11, 30))).id).toBe('lunch');
+    expect((await SignagePlaylist.getActive(at(3, 14, 0))).id).toBe('menu');
+    expect((globalThis as any).fetch).not.toHaveBeenCalled();
+  });
+
+  it('puts the device in Media Player mode like a plain playlist', async () => {
+    await StorageService.saveDisplayMode('webview');
+    serve([{ body: scheduled() }]);
+    await SignagePlaylist.sync(CREDS, 's:abc');
+    expect(await StorageService.getDisplayMode()).toBe('media_player');
+    await SignagePlaylist.sync(CREDS, null);
+    expect(await StorageService.getDisplayMode()).toBe('webview');
+  });
+
+  it('is not a schedule when the manifest has none: the playlist plays whatever the time', async () => {
+    serve([{ body: manifest('p1:1', [VIDEO]) }]);
+    await SignagePlaylist.sync(CREDS, 'p1:1');
+    const active = await SignagePlaylist.getActive(at(2, 12, 0));
+    expect(active.scheduled).toBe(false);
+    expect(active.prefetch).toEqual([]);
+    expect(active.items.length).toBe(1);
+  });
+
+  it('plays the default alone when the schedule is not well formed', async () => {
+    serve([{ body: scheduled({ schedule: 'garbage' }) }]);
+    await SignagePlaylist.sync(CREDS, 's:abc');
+    const active = await SignagePlaylist.getActive(at(2, 12, 0));
+    expect(active.scheduled).toBe(false);
+    expect(active.items.map((i: any) => i.id)).toEqual(['i1']);
+  });
+});
+
+describe('parseSchedule', () => {
+  it('drops what is not usable and keeps the rest', () => {
+    const parsed = parseSchedule({
+      default_playlist: 'menu',
+      playlists: {
+        menu: { name: 'Menu', items: [VIDEO, { id: 'x', kind: 'video', url: 'javascript:alert(1)' }] },
+        broken: null as any,
+      },
+      rules: [
+        { playlist: 'menu', days: [1, 'x', 3], start: '09:00', end: '10:00', from: null, to: null },
+        { playlist: 5, days: [1] },
+        { playlist: 'menu' },
+        null,
+      ],
+    });
+    expect(Object.keys(parsed.playlists)).toEqual(['menu']);
+    expect(parsed.playlists.menu.items.length).toBe(1); // the unsafe address is gone
+    expect(parsed.rules).toEqual([
+      { playlist: 'menu', days: [1, 3], start: '09:00', end: '10:00', from: null, to: null },
+    ]);
+  });
+
+  it('returns nothing for what is not a schedule', () => {
+    expect(parseSchedule(undefined)).toBeUndefined();
+    expect(parseSchedule(null)).toBeUndefined();
+    expect(parseSchedule('x' as any)).toBeUndefined();
+    expect(parseSchedule({} as any)).toBeUndefined();
   });
 });

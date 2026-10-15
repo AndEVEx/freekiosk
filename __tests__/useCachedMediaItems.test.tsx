@@ -257,3 +257,65 @@ describe('useCachedMediaItems', () => {
     expect(latest!.ready).toBe(true);
   });
 });
+
+describe('files that play later (the other playlists of a schedule)', () => {
+  const C = 'https://cdn.test/c.mp4';
+  let result: { items: any[]; ready: boolean } | null = null;
+
+  function PrefetchProbe({ list, prefetch }: { list: any[]; prefetch: any[] }) {
+    result = useCachedMediaItems(list, true, 2048, prefetch);
+    return null;
+  }
+
+  beforeEach(() => {
+    jest.useFakeTimers();
+    mockGetCached.mockReset();
+    mockSync.mockReset();
+    result = null;
+  });
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it('keeps them on the device too, without playing them', async () => {
+    mockGetCached.mockResolvedValue({ [A]: 'file:///files/a.mp4', [C]: 'file:///files/c.mp4' });
+    mockSync.mockReturnValue(new Promise(() => {}));
+
+    await act(async () => {
+      TestRenderer.create(React.createElement(PrefetchProbe, {
+        list: [{ id: '1', url: A, type: 'video' }],
+        prefetch: [{ id: '3', url: C, type: 'video' }],
+      }));
+    });
+    await flush();
+
+    // both are looked up and downloaded, the list being played first
+    expect(mockGetCached).toHaveBeenCalledWith([A, C]);
+    expect(mockSync).toHaveBeenCalledWith([A, C], 2048 * 1024 * 1024);
+    // but only the playlist that plays now is handed to the player
+    expect(result!.items.map((i: any) => i.url)).toEqual(['file:///files/a.mp4']);
+  });
+
+  it('asks for a file once when it is in both', async () => {
+    mockGetCached.mockResolvedValue({});
+    mockSync.mockReturnValue(new Promise(() => {}));
+    await act(async () => {
+      TestRenderer.create(React.createElement(PrefetchProbe, {
+        list: [{ id: '1', url: A, type: 'video' }],
+        prefetch: [{ id: '1b', url: A, type: 'video' }, { id: '3', url: C, type: 'video' }],
+      }));
+    });
+    await flush();
+    expect(mockSync).toHaveBeenCalledWith([A, C], 2048 * 1024 * 1024);
+  });
+
+  it('changes nothing for a device with no schedule', async () => {
+    mockGetCached.mockResolvedValue({});
+    mockSync.mockReturnValue(new Promise(() => {}));
+    await act(async () => {
+      TestRenderer.create(React.createElement(PrefetchProbe, { list: [{ id: '1', url: A, type: 'video' }], prefetch: [] }));
+    });
+    await flush();
+    expect(mockSync).toHaveBeenCalledWith([A], 2048 * 1024 * 1024);
+  });
+});

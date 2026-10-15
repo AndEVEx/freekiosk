@@ -20,6 +20,34 @@ When you change the playlist (add, remove, reorder, change a duration) the scree
 a minute. When you remove a screen from a playlist, it goes back to the mode it was in before
 (for example a web page).
 
+## Schedules
+
+A playlist can play at certain times instead of the screen's default one: on chosen **days of the
+week**, between two **times**, within a **date range**, with a **priority**. Add them in the
+playlist's page in the dashboard (**Schedules**).
+
+- **The screen decides, not the cloud.** The cloud hands the device every playlist that can play and
+  the rules, and the device picks the right one with **its own clock** (its local time). It changes
+  playlist on time even when it is offline, and it keeps the files of all those playlists in its
+  offline cache for that.
+- **Precedence.** When several rules match, the highest priority wins; at equal priority a rule on
+  the screen itself wins over one on its group, then the most recent. When no rule matches, the
+  default playlist plays, or **a blank screen** when there is none (for example outside opening
+  hours).
+- **Hours.** The start time is included and the end time excluded. An end time earlier than the start
+  time runs past midnight (22:00 to 02:00): the evening belongs to the day you ticked, the hours
+  after midnight to the next day. Empty times mean the whole day, empty dates no limit.
+- **How fast.** The screen looks at its clock every 30 seconds, so a playlist changes within about
+  30 seconds of the time you set.
+
+Checked on a tablet emulator against a local cloud, with the device clock: a default playlist
+(a red image) and a rule for another (a blue image) from 10:18 to 10:22. The screen showed the red
+one, turned blue 26 seconds after the start of the slot, and **went back to red at the end of the
+slot with the network cut** (it had been cut during the slot). The rules themselves (precedence,
+bounds, midnight, dates, malformed rules) are covered by 32 unit tests on the device and 53 on the
+cloud (precedence, version, manifest, validation, permissions). Not checked: a physical device, a time zone change or a clock set by hand while a rule is
+running, and a daylight-saving change.
+
 ## On the device
 
 - **Settings > General > Media Playlist** says that the playlist comes from FreeKiosk Cloud
@@ -41,13 +69,12 @@ to a device in Web mode is downloaded, the device switches to Media Player mode 
 to date; removing an item from the playlist brings the device to the new version; removing the
 assignment brings it back to Web mode and the device reports none.
 
-Not checked: a physical device or an Android TV with a playlist, a long playlist, images in a
-cloud playlist (the unit tests cover them), and a network drop while a playlist is playing for
-the first time (the offline cache is checked separately, in [android-tv.md](android-tv.md)).
+Images in a cloud playlist were checked in the schedule test below. Not checked: a physical
+device or an Android TV with a playlist, a long playlist, and a network drop while a playlist is
+playing for the first time (the offline cache is checked separately, in [android-tv.md](android-tv.md)).
 
 ## Not in this version
 
-Schedules (days, hours, priorities), files uploaded to the cloud (items are URLs for now), a
-checksum of each file, web pages and YouTube as items, several zones on one screen, and a
-playback report. The contract between the app and the cloud is in the cloud repository
-(`ANDROID_INTEGRATION.md`, section 1d).
+Files uploaded to the cloud (items are URLs for now), a checksum of each file, web pages and
+YouTube as items, several zones on one screen, and a playback report. The contract between the
+app and the cloud is in the cloud repository (`ANDROID_INTEGRATION.md`, section 1d).

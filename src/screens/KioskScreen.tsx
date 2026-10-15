@@ -276,6 +276,11 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
   const [mediaPlayerCache, setMediaPlayerCache] = useState<boolean>(defaultMediaCacheEnabled());
   const [mediaPlayerUnattended, setMediaPlayerUnattended] = useState<boolean>(defaultMediaUnattended());
   const [mediaPlayerCacheLimitMb, setMediaPlayerCacheLimitMb] = useState<number>(DEFAULT_MEDIA_CACHE_LIMIT_MB);
+  // Digital signage: the other playlists of a schedule (kept in the cache ahead of their time),
+  // whether the cloud gave a schedule, and which playlist plays now
+  const [signagePrefetch, setSignagePrefetch] = useState<MediaItem[]>([]);
+  const [signageScheduled, setSignageScheduled] = useState<boolean>(false);
+  const signageActiveIdRef = useRef<string | null>(null);
 
   // AppState listener - detects when the app returns to the foreground
   useEffect(() => {
@@ -389,6 +394,20 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
 
   // Keep the ref above in step with the state it mirrors.
   useEffect(() => { displayModeRef.current = displayMode; }, [displayMode]);
+
+  // Digital signage: with a schedule the clock decides which playlist plays. Look again every
+  // 30 seconds and swap the list only when the playlist changed (the player restarts from the
+  // first item on a new list). A new version from the cloud takes the reload path instead.
+  useEffect(() => {
+    if (displayMode !== 'media_player') return undefined;
+    const timer = setInterval(async () => {
+      const active = await SignagePlaylist.getActive(new Date());
+      if (!active || !active.scheduled || active.id === signageActiveIdRef.current) return;
+      signageActiveIdRef.current = active.id;
+      setMediaPlayerItems(active.items);
+    }, 30_000);
+    return () => clearInterval(timer);
+  }, [displayMode]);
 
   /**
    * The settings that only exist inside the WebView's injectedJavaScript.
@@ -2098,7 +2117,7 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
       // Load Media Player settings
       if (savedDisplayMode === 'media_player') {
         // A playlist assigned by FreeKiosk Cloud replaces the list set on the device
-        const cloudPlaylist = await SignagePlaylist.getActive();
+        const cloudPlaylist = await SignagePlaylist.getActive(new Date());
         const mpItems = cloudPlaylist
           ? cloudPlaylist.items
           : (jsonParse(K.MEDIA_PLAYER_ITEMS, []) as MediaItem[]);
@@ -2116,6 +2135,9 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
         const mpUnattended = bool(K.MEDIA_PLAYER_UNATTENDED, defaultMediaUnattended());
         const mpCacheLimitMb = num(K.MEDIA_PLAYER_CACHE_LIMIT_MB, DEFAULT_MEDIA_CACHE_LIMIT_MB);
         setMediaPlayerItems(mpItems);
+        setSignagePrefetch(cloudPlaylist?.prefetch ?? []);
+        setSignageScheduled(!!cloudPlaylist?.scheduled);
+        signageActiveIdRef.current = cloudPlaylist ? cloudPlaylist.id : null;
         setMediaPlayerAutoPlay(mpAutoPlay);
         setMediaPlayerLoop(mpLoop);
         setMediaPlayerShuffle(mpShuffle);
@@ -3118,6 +3140,8 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
             muteVideo={mediaPlayerMute}
             cacheOffline={mediaPlayerCache}
             unattended={mediaPlayerUnattended}
+            prefetchItems={signagePrefetch}
+            emptyIsBlank={signageScheduled}
             cacheLimitMb={mediaPlayerCacheLimitMb}
             onUserInteraction={onUserInteraction}
           />

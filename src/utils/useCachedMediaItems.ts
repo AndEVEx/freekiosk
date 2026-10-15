@@ -31,13 +31,16 @@ export function useCachedMediaItems(
   items: MediaItem[],
   enabled: boolean,
   limitMb: number = DEFAULT_MEDIA_CACHE_LIMIT_MB,
+  // Files that may play later (the other playlists of a schedule): kept in the cache too, so
+  // the screen changes playlist on time even with no network
+  prefetch: MediaItem[] = [],
 ): { items: MediaItem[]; ready: boolean } {
   const [cached, setCached] = useState<MediaCacheMap>({});
   const [ready, setReady] = useState<boolean>(!enabled);
   const cachedRef = useRef<MediaCacheMap>({});
 
   // A new list of URLs, not a new array with the same URLs, is what restarts the work
-  const urlsKey = JSON.stringify(collectCacheableUrls(items));
+  const urlsKey = JSON.stringify(collectCacheableUrls([...items, ...prefetch]));
 
   useEffect(() => {
     if (!enabled || !MediaCacheModule) {

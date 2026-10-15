@@ -31,6 +31,10 @@ interface MediaPlayerComponentProps {
   cacheLimitMb?: number;
   /** No error text on screen, and an item that does not load or freezes is skipped */
   unattended?: boolean;
+  /** Files of the other playlists of a schedule, kept on the device ahead of their time */
+  prefetchItems?: MediaItem[];
+  /** Nothing to play is a blank screen, not a help text (a schedule with nothing due) */
+  emptyIsBlank?: boolean;
   onUserInteraction?: (event?: { isTap?: boolean; x?: number; y?: number }) => void;
 }
 
@@ -49,12 +53,14 @@ const MediaPlayerComponent: React.FC<MediaPlayerComponentProps> = ({
   cacheOffline = false,
   cacheLimitMb,
   unattended = false,
+  prefetchItems,
+  emptyIsBlank = false,
   onUserInteraction,
 }) => {
   const { t } = useTranslation();
   const webViewRef = useRef<WebView>(null);
   // With the cache off this is the playlist as configured, ready at once
-  const { items, ready } = useCachedMediaItems(configuredItems, cacheOffline, cacheLimitMb);
+  const { items, ready } = useCachedMediaItems(configuredItems, cacheOffline, cacheLimitMb, prefetchItems);
 
   const htmlContent = useMemo(() => {
     if (!items || items.length === 0) {
@@ -94,6 +100,7 @@ const MediaPlayerComponent: React.FC<MediaPlayerComponentProps> = ({
   }
 
   if (!items || items.length === 0) {
+    if (emptyIsBlank) return <View style={[styles.container, { backgroundColor }]} />;
     return (
       <View style={[styles.emptyContainer, { backgroundColor }]}>
         <Icon name="movie-outline" size={56} color="#ffffff" style={styles.emptyIcon} />
