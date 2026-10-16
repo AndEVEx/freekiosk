@@ -463,6 +463,7 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
       () => currentWebViewUrlRef.current || url,
     );
     if (CLOUD_ENABLED) {
+      CloudSyncService.retain();
       // Auto-enroll first if a Device Owner provisioning QR left us a token,
       // then start the heartbeat loop.
       (async () => {
@@ -515,7 +516,7 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
       onConfigUpdated?.remove();
       onForceUnenroll?.remove();
       if (CLOUD_ENABLED) {
-        CloudSyncService.stop();
+        CloudSyncService.release();
       }
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps

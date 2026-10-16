@@ -133,6 +133,10 @@ class CloudSyncServiceClass {
   private provisioningStatus: ProvisioningStatus = { state: 'none' };
   private lastHeartbeatAtMs = 0;
   private isRunning = false;
+  // Screens that rely on the heartbeat loop. The kiosk screen can be mounted twice in a row (an ADB
+  // config restarts the activity), and React runs the first one's cleanup after the second one's start:
+  // a plain stop() there killed the loop for good.
+  private owners = 0;
 
   // ─── Lifecycle ───────────────────────────────────────────────────────────────
 
@@ -167,6 +171,17 @@ class CloudSyncServiceClass {
       () => getCloudCredentials().then(c => c && this.sendHeartbeat(c)),
       HEARTBEAT_INTERVAL_MS,
     );
+  }
+
+  /** A screen starts relying on the heartbeat loop (pair with release()). */
+  retain(): void {
+    this.owners += 1;
+  }
+
+  /** That screen is gone: the loop stops with the last one only. */
+  release(): void {
+    this.owners = Math.max(0, this.owners - 1);
+    if (this.owners === 0) this.stop();
   }
 
   stop(): void {
