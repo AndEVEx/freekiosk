@@ -401,7 +401,7 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
   useEffect(() => {
     if (displayMode !== 'media_player') return undefined;
     const timer = setInterval(async () => {
-      const active = await SignagePlaylist.getActive(new Date());
+      const active = await SignagePlaylist.getActive();
       if (!active || !active.scheduled || active.id === signageActiveIdRef.current) return;
       signageActiveIdRef.current = active.id;
       setMediaPlayerItems(active.items);
@@ -2117,7 +2117,7 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
       // Load Media Player settings
       if (savedDisplayMode === 'media_player') {
         // A playlist assigned by FreeKiosk Cloud replaces the list set on the device
-        const cloudPlaylist = await SignagePlaylist.getActive(new Date());
+        const cloudPlaylist = await SignagePlaylist.getActive();
         const mpItems = cloudPlaylist
           ? cloudPlaylist.items
           : (jsonParse(K.MEDIA_PLAYER_ITEMS, []) as MediaItem[]);

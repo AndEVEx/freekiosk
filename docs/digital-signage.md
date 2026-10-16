@@ -44,9 +44,17 @@ week**, between two **times**, within a **date range**, with a **priority**. Add
 playlist's page in the dashboard (**Schedules**).
 
 - **The screen decides, not the cloud.** The cloud hands the device every playlist that can play and
-  the rules, and the device picks the right one with **its own clock** (its local time). It changes
-  playlist on time even when it is offline, and it keeps the files of all those playlists in its
-  offline cache for that.
+  the rules, and the device picks the right one itself, in its local time zone. It changes playlist
+  on time even when it is offline, and it keeps the files of all those playlists in its offline cache
+  for that.
+- **A clock that is off.** A TV box often has no battery-backed clock and no network time, and can be
+  hours wrong. Every heartbeat answer carries the cloud's time (`server_time`): the app keeps the gap
+  and reads the schedule with the device's clock corrected by it (`src/utils/ServerClock.ts`). A gap
+  under a minute is ignored, an exchange slower than 15 seconds is not measured with, and the gap is
+  kept across restarts: a screen that boots without network is as right as it was, and measures
+  again at its first heartbeat. Only the schedule uses it; the device's own timers keep its clock. Checked
+  on an Android TV emulator whose clock is ten hours behind: against a rule at 16:03 UTC it switched to
+  the scheduled playlist at 16:03 UTC (before the fix it followed its own wrong time and never did).
 - **Precedence.** When several rules match, the highest priority wins; at equal priority a rule on
   the screen itself wins over one on its group, then the most recent. When no rule matches, the
   default playlist plays, or **a blank screen** when there is none (for example outside opening

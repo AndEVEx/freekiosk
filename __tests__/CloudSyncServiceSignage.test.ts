@@ -94,6 +94,23 @@ describe('heartbeat and digital signage', () => {
 
   const beat = () => CloudSyncService.sendHeartbeat(CREDS, { force: true });
 
+  it('learns the cloud time from the answer, for a schedule judged by a clock that may be hours off', async () => {
+    const { ServerClock } = require('../src/utils/ServerClock');
+    ServerClock._reset();
+    const fiveHoursAhead = new Date(Date.now() + 5 * 3600_000).toISOString();
+    cloud({ server_time: fiveHoursAhead });
+    await beat();
+    const offset = await ServerClock.offset();
+    expect(Math.abs(offset - 5 * 3600_000)).toBeLessThan(5000);
+
+    // the answer of an older cloud or a test value changes nothing
+    ServerClock._reset();
+    await store.clear();
+    cloud({ server_time: 'now' });
+    await beat();
+    expect(await ServerClock.offset()).toBe(0);
+  });
+
   it('carries nothing new until the cloud has spoken of playlists', async () => {
     cloud({});
     await beat();

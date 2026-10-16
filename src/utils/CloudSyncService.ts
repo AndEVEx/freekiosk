@@ -7,6 +7,7 @@ import { CloudCommandService } from './CloudCommandService';
 import { getCapabilities } from './capabilities';
 import { getMediaCacheReport } from './MediaCacheReport';
 import { SignagePlaylist } from './SignagePlaylist';
+import { ServerClock } from './ServerClock';
 import KioskModule from './KioskModule';
 import {
   CloudCredentials,
@@ -270,6 +271,7 @@ class CloudSyncServiceClass {
         // Telemetry is best-effort — never block heartbeat
       }
 
+      const sentAt = Date.now();
       const response = await fetch(
         `${c.cloudUrl}/api/v1/devices/${c.deviceId}/heartbeat/`,
         {
@@ -301,7 +303,10 @@ class CloudSyncServiceClass {
       // Accepted: whatever refused us before is over.
       await this._clearAuthRefusal();
 
+      const receivedAt = Date.now();
       const data: HeartbeatResponse = await response.json();
+      // The schedule of the digital signage follows the cloud's time, not a device clock that may be hours off
+      await ServerClock.observe(data.server_time, sentAt, receivedAt).catch(() => {});
 
       if (data.force_unenroll) {
         await this._wipeAndUnenroll();

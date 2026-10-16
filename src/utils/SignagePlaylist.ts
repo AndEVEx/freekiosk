@@ -23,6 +23,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StorageService } from './storage';
 import type { MediaItem } from '../types/mediaPlayer';
 import { activePlaylistId } from './SignageSchedule';
+import { ServerClock } from './ServerClock';
 import type { Schedule, ScheduleRule } from './SignageSchedule';
 
 const KEY_PLAYLIST = '@kiosk_signage_playlist';
@@ -177,9 +178,11 @@ export const SignagePlaylist = {
   /**
    * The playlist to play instead of the device's own list at `now`, or null when the cloud
    * assigned none. With a schedule the answer depends on the clock: call it again to follow it.
+   * `now` is the cloud's time (the device's clock corrected by `ServerClock`) unless given.
    */
-  async getActive(now: Date = new Date()): Promise<ActivePlaylist | null> {
+  async getActive(at?: Date): Promise<ActivePlaylist | null> {
     try {
+      const now = at ?? (await ServerClock.now());
       const raw = await AsyncStorage.getItem(KEY_PLAYLIST);
       if (!raw) return null;
       const parsed = JSON.parse(raw) as StoredPlaylist;
