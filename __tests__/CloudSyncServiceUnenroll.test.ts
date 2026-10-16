@@ -97,6 +97,21 @@ describe('CloudSyncService.unenroll', () => {
     expect(mockClearCloudCredentials).toHaveBeenCalledTimes(1);
   });
 
+  it('forgets the playlist it was playing, so that a screen enrolled again plays it', async () => {
+    const AsyncStorage = require('@react-native-async-storage/async-storage');
+    const store = AsyncStorage.default ?? AsyncStorage;
+    await store.setItem('@kiosk_signage_playlist', JSON.stringify({ version: 'p1:1', name: 'Menu', items: [] }));
+    await store.setItem('@kiosk_signage_version', 'p1:1');
+    await store.setItem('@kiosk_signage_previous_mode', 'webview');
+    installFetch([{ status: 200 }]);
+
+    await runUnenroll();
+
+    expect(await store.getItem('@kiosk_signage_playlist')).toBeNull();
+    expect(await store.getItem('@kiosk_signage_version')).toBeNull();
+    expect(await store.getItem('@kiosk_signage_previous_mode')).toBeNull();
+  });
+
   it.each([401, 403, 404])('does not retry a %i and still wipes', async status => {
     const calls = installFetch([{ status }]);
 

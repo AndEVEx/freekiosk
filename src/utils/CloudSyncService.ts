@@ -372,6 +372,7 @@ class CloudSyncServiceClass {
 
       // Wipe all local settings before applying cloud config
       await AsyncStorage.multiRemove(Object.values(KEYS));
+      await SignagePlaylist.clear();
       await Promise.all([
         clearSecurePin(),
         clearSecureApiKey(),
@@ -562,6 +563,7 @@ class CloudSyncServiceClass {
 
     // Clear all AsyncStorage settings, and the refusal window that led here
     await AsyncStorage.multiRemove([...Object.values(KEYS), AUTH_FAILURE_KEY]);
+    await SignagePlaylist.clear();
 
     // Clear all Keychain secrets
     await Promise.all([

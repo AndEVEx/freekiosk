@@ -82,6 +82,43 @@ describe('SignagePlaylist.sync', () => {
     expect(await SignagePlaylist.getVersionForReport()).toBe('p1:1');
   });
 
+  it('forgets the playlist, its version and the mode it came from when cleared', async () => {
+    await StorageService.saveDisplayMode('webview');
+    serve([{ body: manifest('p1:1', [VIDEO]) }]);
+    await SignagePlaylist.sync(CREDS, 'p1:1');
+    expect(await SignagePlaylist.getVersionForReport()).toBe('p1:1');
+
+    await SignagePlaylist.clear();
+
+    expect(await SignagePlaylist.getActive()).toBeNull();
+    expect(await SignagePlaylist.getVersionForReport()).toBeUndefined();
+    expect(await store.getItem('@kiosk_signage_previous_mode')).toBeNull();
+  });
+
+  it('plays again a playlist of the same version after the device left the cloud and came back', async () => {
+    await StorageService.saveDisplayMode('webview');
+    serve([{ body: manifest('p1:1', [VIDEO]) }, { body: manifest('p1:1', [VIDEO]) }]);
+    await SignagePlaylist.sync(CREDS, 'p1:1');
+    expect(await StorageService.getDisplayMode()).toBe('media_player');
+
+    // Leaving the cloud resets the settings (the mode goes back to the default) and clears the playlist
+    await StorageService.saveDisplayMode('webview');
+    await SignagePlaylist.clear();
+
+    expect(await SignagePlaylist.sync(CREDS, 'p1:1')).toBe(true); // not "already applied"
+    expect(await StorageService.getDisplayMode()).toBe('media_player');
+    expect((await SignagePlaylist.getActive()).items.length).toBe(1);
+  });
+
+  it('without a clear, the same version is taken for applied and the screen stays where it is (why clear exists)', async () => {
+    await StorageService.saveDisplayMode('webview');
+    serve([{ body: manifest('p1:1', [VIDEO]) }]);
+    await SignagePlaylist.sync(CREDS, 'p1:1');
+    await StorageService.saveDisplayMode('webview');
+    expect(await SignagePlaylist.sync(CREDS, 'p1:1')).toBe(false);
+    expect(await StorageService.getDisplayMode()).toBe('webview');
+  });
+
   it('does not download the same version twice', async () => {
     serve([{ body: manifest('p1:1', [VIDEO]) }]);
     await SignagePlaylist.sync(CREDS, 'p1:1');

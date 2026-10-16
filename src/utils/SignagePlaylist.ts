@@ -264,6 +264,19 @@ export const SignagePlaylist = {
     }
   },
 
+  /**
+   * Forget everything about the playlist: the one kept, the version applied and the mode it came from.
+   * Done when the device leaves the cloud or is enrolled again. Otherwise a screen enrolled again in the same
+   * organisation would find its playlist "already applied", and would never go back to the player.
+   */
+  async clear(): Promise<void> {
+    try {
+      await AsyncStorage.multiRemove([KEY_PLAYLIST, KEY_VERSION, KEY_PREVIOUS_MODE]);
+    } catch {
+      // Nothing to forget, or storage that will not say: the next version from the cloud starts over anyway
+    }
+  },
+
   async _enterPlayerMode(): Promise<void> {
     const mode = await StorageService.getDisplayMode();
     if (mode === 'media_player') return;
