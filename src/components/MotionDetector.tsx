@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, AppState } from 'react-native';
 import { Camera, useCameraDevice, useCameraPermission } from 'react-native-vision-camera';
 import MotionDetectionModule from '../utils/MotionDetectionModule';
 import { httpServer } from '../utils/HttpServerModule';
@@ -19,6 +19,10 @@ const CAPTURE_INTERVAL = 1000; // Capturer une photo par seconde
 const CAMERA_READY_DELAY = 1500; // Delay before starting detection to let camera initialize and auto-expose
 const CAMERA2_CAPTURE_INTERVAL = 2000; // Camera2 fallback is slower (opens/closes camera each time), use 2s interval
 const WARMUP_FRAMES = 3; // Skip first N frames to let camera auto-exposure adjust
+// Camera taken by another app (#301): wait before each reopen attempt, the last delay repeats
+const RECOVERY_DELAYS = [2000, 5000, 15000, 30000, 60000];
+const RECOVERY_RETURN_DELAY = 500; // after the app comes back to the foreground
+const RECOVERY_REOPEN_PAUSE = 500; // camera held inactive between the close and the reopen
 
 // Seuils de sensibilité : ratio de pixels qui doivent changer
 const SENSITIVITY_THRESHOLDS = {
@@ -49,6 +53,14 @@ const MotionDetector: React.FC<MotionDetectorProps> = ({
   const captureCount = useRef<number>(0);
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [isCameraReady, setIsCameraReady] = useState(false);
+
+  // #301 — recovery after another app took the camera. CameraX closes the session and never
+  // reopens it by itself; only an isActive false -> true cycle does.
+  const wantActive = useRef<boolean>(false); // the camera is supposed to be open
+  const cameraLost = useRef<boolean>(false);
+  const recoveryAttempt = useRef<number>(0);
+  const recoveryTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const reopenTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Camera2 fallback state — for devices where CameraX/vision-camera fails
   // (e.g. MediaTek LEGACY front-only cameras where CameraValidator rejects the device)
@@ -108,6 +120,20 @@ const MotionDetector: React.FC<MotionDetectorProps> = ({
     }
   }, [device]);
 
+  const clearRecovery = useCallback(() => {
+    if (recoveryTimeout.current) {
+      clearTimeout(recoveryTimeout.current);
+      recoveryTimeout.current = null;
+    }
+    if (reopenTimeout.current) {
+      clearTimeout(reopenTimeout.current);
+      reopenTimeout.current = null;
+    }
+    recoveryAttempt.current = 0;
+  }, []);
+
+  useEffect(() => clearRecovery, [clearRecovery]);
+
   const stopDetection = useCallback(() => {
     if (startDelayTimeout.current) {
       clearTimeout(startDelayTimeout.current);
@@ -123,6 +149,58 @@ const MotionDetector: React.FC<MotionDetectorProps> = ({
     // Reset native module
     MotionDetectionModule?.reset().catch(() => {});
   }, []);
+
+  // Reopen a lost camera. Only runs in the foreground (a background app must not take the
+  // camera from the app the person just opened) and repeats until onStarted clears the loss.
+  const scheduleRecovery = useCallback((delay?: number) => {
+    if (recoveryTimeout.current || reopenTimeout.current) return;
+    if (!wantActive.current || AppState.currentState !== 'active') return;
+
+    const wait = delay ?? RECOVERY_DELAYS[Math.min(recoveryAttempt.current, RECOVERY_DELAYS.length - 1)];
+    recoveryTimeout.current = setTimeout(() => {
+      recoveryTimeout.current = null;
+      if (!isMounted.current || !wantActive.current || !cameraLost.current) return;
+      if (AppState.currentState !== 'active') return;
+
+      recoveryAttempt.current += 1;
+      console.log(`[MotionDetection] Reopening the camera (attempt ${recoveryAttempt.current})`);
+      setIsCameraActive(false);
+      reopenTimeout.current = setTimeout(() => {
+        reopenTimeout.current = null;
+        if (!isMounted.current || !wantActive.current) return;
+        setIsCameraActive(true);
+        scheduleRecovery(); // checks again, unless the camera comes back first
+      }, RECOVERY_REOPEN_PAUSE);
+    }, wait);
+  }, []);
+
+  const markCameraLost = useCallback(() => {
+    if (!wantActive.current) return;
+    cameraLost.current = true;
+    setIsCameraReady(false);
+    stopDetection();
+    scheduleRecovery();
+  }, [stopDetection, scheduleRecovery]);
+
+  // Back in the foreground: try again at once instead of waiting out a long delay
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        if (cameraLost.current && !reopenTimeout.current) {
+          if (recoveryTimeout.current) {
+            clearTimeout(recoveryTimeout.current);
+            recoveryTimeout.current = null;
+          }
+          recoveryAttempt.current = 0;
+          scheduleRecovery(RECOVERY_RETURN_DELAY);
+        }
+      } else if (recoveryTimeout.current) {
+        clearTimeout(recoveryTimeout.current);
+        recoveryTimeout.current = null;
+      }
+    });
+    return () => subscription.remove();
+  }, [scheduleRecovery]);
 
   // Camera2 fallback capture — uses Camera2 API via HttpServerModule
   const captureAndCompareCamera2 = useCallback(async () => {
@@ -317,8 +395,12 @@ const MotionDetector: React.FC<MotionDetectorProps> = ({
   // Vision-camera lifecycle (original)
   useEffect(() => {
     if (enabled && hasPermission && device && !useCamera2Fallback) {
+      wantActive.current = true;
       setIsCameraActive(true);
     } else {
+      wantActive.current = false;
+      cameraLost.current = false;
+      clearRecovery();
       setIsCameraActive(false);
       setIsCameraReady(false);
       if (!useCamera2Fallback) {
@@ -331,7 +413,7 @@ const MotionDetector: React.FC<MotionDetectorProps> = ({
         stopDetection();
       }
     };
-  }, [enabled, hasPermission, device, useCamera2Fallback, stopDetection]);
+  }, [enabled, hasPermission, device, useCamera2Fallback, stopDetection, clearRecovery]);
 
   // Start detection only when camera is ready (vision-camera mode)
   useEffect(() => {
@@ -358,7 +440,26 @@ const MotionDetector: React.FC<MotionDetectorProps> = ({
     setIsCameraReady(false);
     stopDetection();
     onStatusChange?.('error');
-  }, [cameraPosition, stopDetection, onStatusChange]);
+    markCameraLost();
+  }, [cameraPosition, stopDetection, onStatusChange, markCameraLost]);
+
+  // The session closed while we want it open: another app took the camera (#301).
+  // The cycle that reopens it does not call onInitialized again, so onStarted brings it back.
+  const handleCameraStopped = useCallback(() => {
+    if (!isMounted.current || !wantActive.current || cameraLost.current) return;
+    console.warn(`[MotionDetection] Camera stopped (${cameraPosition}), another app may have taken it`);
+    onStatusChange?.('error');
+    markCameraLost();
+  }, [cameraPosition, onStatusChange, markCameraLost]);
+
+  const handleCameraStarted = useCallback(() => {
+    if (!isMounted.current || !cameraLost.current) return;
+    console.log(`[MotionDetection] Camera is back (${cameraPosition})`);
+    cameraLost.current = false;
+    clearRecovery();
+    setIsCameraReady(true);
+    onStatusChange?.('active');
+  }, [cameraPosition, onStatusChange, clearRecovery]);
 
   // Check if camera is available and notify status
   useEffect(() => {
@@ -390,6 +491,8 @@ const MotionDetector: React.FC<MotionDetectorProps> = ({
         photo={true}
         lowLightBoost={device.supportsLowLightBoost}
         onInitialized={handleCameraInitialized}
+        onStarted={handleCameraStarted}
+        onStopped={handleCameraStopped}
         onError={handleCameraError}
         enableZoomGesture={false}
       />
