@@ -8,6 +8,7 @@ import { getCapabilities } from './capabilities';
 import { getMediaCacheReport } from './MediaCacheReport';
 import { SignagePlaylist } from './SignagePlaylist';
 import { ServerClock } from './ServerClock';
+import { deviceTimeZone } from './DeviceTimeZone';
 import KioskModule from './KioskModule';
 import {
   CloudCredentials,
@@ -261,6 +262,8 @@ class CloudSyncServiceClass {
             free_storage_mb: status.device.freeStorageMb,
             free_memory_mb: status.device.freeMemoryMb,
             uptime_seconds: status.device.uptime,
+            // Where the screen is, so the cloud can say when a schedule changes the playlist next
+            ...deviceTimeZone(),
             // Only once the offline cache has been on: any other device sends what it always did
             ...(getMediaCacheReport() ? { media_cache: getMediaCacheReport() } : {}),
             // The playlist version this screen plays, so the dashboard can tell it is up to date
