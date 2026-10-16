@@ -46,6 +46,7 @@ class KioskWatchdogService : Service() {
         private const val CHECK_INTERVAL_MS = 10_000L  // check every 10 s
         private const val RELAUNCH_COOLDOWN_MS = 15_000L // min 15 s between relaunches
         private const val FOREGROUND_LOOKBACK_MS = 24 * 60 * 60 * 1000L // #282
+        private const val SYSTEM_UI_PACKAGE = "com.android.systemui" // #268
 
         /** Matches the JS heartbeat interval in CloudSyncService. */
         private const val CLOUD_HEARTBEAT_INTERVAL_MS = 30_000L
@@ -247,6 +248,17 @@ class KioskWatchdogService : Service() {
         }
 
         if (isMainActivityRunning()) return  // FreeKiosk itself is in foreground — fine
+
+        // #268: with "Allow the USB Debugging Prompt In Lock Mode" on, the "Allow USB
+        // debugging?" prompt (an activity of SystemUI) is let through by lock task, but it
+        // takes the foreground from MainActivity, so the checks below would drag the kiosk
+        // back over it within CHECK_INTERVAL_MS and the prompt vanished before it could be
+        // answered. Narrow on purpose: opt-in only, and only while SystemUI is what is in
+        // front; anything else still gets the relaunch.
+        if (isUsbDebugPromptInFront()) {
+            DebugLog.d(TAG, "USB debugging prompt is in front - skipping relaunch check")
+            return
+        }
 
         // In external app mode, the external app is expected to be in the foreground.
         // Don't relaunch MainActivity just because it's not the topActivity. (#106)
@@ -503,6 +515,33 @@ class KioskWatchdogService : Service() {
     }
 
     private fun keepAliveStillNeeded(): Boolean = needsKeepAlive(this)
+
+    /**
+     * #268: whether the admin allowed the system USB debugging prompt in lock mode, and
+     * SystemUI is the package that last came to the front. Unknown foreground (usage access
+     * not granted) is "no": the relaunch then happens as before.
+     */
+    private fun isUsbDebugPromptInFront(): Boolean {
+        if (!isUsbDebugDialogAllowed()) return false
+        return getForegroundPackageFromEvents() == SYSTEM_UI_PACKAGE
+    }
+
+    private fun isUsbDebugDialogAllowed(): Boolean {
+        return try {
+            val dbPath = getDatabasePath("RKStorage").absolutePath
+            val db = SQLiteDatabase.openDatabase(dbPath, null, SQLiteDatabase.OPEN_READONLY)
+            val cursor = db.rawQuery(
+                "SELECT value FROM catalystLocalStorage WHERE key = ?",
+                arrayOf("@kiosk_allow_usb_debug_dialog"))
+            val allowed = cursor.moveToFirst() && cursor.getString(0) == "true"
+            cursor.close()
+            db.close()
+            allowed
+        } catch (e: Exception) {
+            DebugLog.d(TAG, "Cannot read allow_usb_debug_dialog: ${e.message}")
+            false
+        }
+    }
 
     private fun isKioskEnabled(): Boolean {
         return try {
