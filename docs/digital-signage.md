@@ -98,6 +98,12 @@ Images in a cloud playlist were checked in the schedule test below. Not checked:
 device or an Android TV with a playlist, a long playlist, and a network drop while a playlist is
 playing for the first time (the offline cache is checked separately, in [android-tv.md](android-tv.md)).
 
+## Screensaver and scheduled sleep
+
+A screen that plays a playlist from the cloud is not covered by the screensaver (inactivity timer): it
+would hide the playlist for good. The scheduled sleep (Screen Scheduler) still applies: the screen is
+black during the window and the playlist resumes after it. Checked on a tablet emulator against the cloud.
+
 ## Not in this version
 
 Files uploaded to the cloud (items are URLs for now), a checksum of each file, web pages and

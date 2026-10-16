@@ -281,6 +281,9 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
   const [signagePrefetch, setSignagePrefetch] = useState<MediaItem[]>([]);
   const [signageScheduled, setSignageScheduled] = useState<boolean>(false);
   const signageActiveIdRef = useRef<string | null>(null);
+  // True while the screen plays a playlist FreeKiosk Cloud gave it. Nobody touches such a screen, so
+  // "no touch for a while" says nothing about it: the screensaver must not cover the playlist.
+  const [signageManaged, setSignageManaged] = useState(false);
 
   // AppState listener - detects when the app returns to the foreground
   useEffect(() => {
@@ -2138,6 +2141,7 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
         setSignagePrefetch(cloudPlaylist?.prefetch ?? []);
         setSignageScheduled(!!cloudPlaylist?.scheduled);
         signageActiveIdRef.current = cloudPlaylist ? cloudPlaylist.id : null;
+        setSignageManaged(!!cloudPlaylist);
         setMediaPlayerAutoPlay(mpAutoPlay);
         setMediaPlayerLoop(mpLoop);
         setMediaPlayerShuffle(mpShuffle);
@@ -2374,6 +2378,9 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
   const triggerScreensaverTimeout = useCallback(() => {
     if (isScheduledSleep) return;
     if (!(screensaverEnabled && inactivityEnabled)) return;
+    // A playlist from the cloud is on: inactivity is its normal state, not a reason to cover it (a
+    // sleep schedule, a command or the schedule's own blank screen still can)
+    if (signageManaged && displayMode === 'media_player') return;
     // #190 — No motion pre-check in External App mode: FreeKiosk is backgrounded there,
     // so the 10s pre-check setTimeout below is frozen by RN (the exact timer freeze the
     // native countdown works around) and the screensaver never activated. The camera
@@ -2394,7 +2401,7 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
       Keyboard.dismiss();
       setIsScreensaverActive(true);
     }
-  }, [isScheduledSleep, screensaverEnabled, inactivityEnabled, motionEnabled, displayMode]);
+  }, [isScheduledSleep, screensaverEnabled, inactivityEnabled, motionEnabled, displayMode, signageManaged]);
 
   const resetTimer = () => {
     clearTimer();
