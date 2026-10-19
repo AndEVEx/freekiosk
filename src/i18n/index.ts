@@ -3,6 +3,7 @@ import { initReactI18next } from 'react-i18next';
 import { I18nManager, NativeModules, Platform } from 'react-native';
 import { StorageService } from '../utils/storage';
 import en from './locales/en.json';
+import de from './locales/de.json';
 import es from './locales/es.json';
 import fr from './locales/fr.json';
 import ptBR from './locales/pt-BR.json';
@@ -10,6 +11,7 @@ import ptBR from './locales/pt-BR.json';
 // Each language is named in itself: someone who cannot read the current one must still find theirs.
 export const LANGUAGE_OPTIONS = [
   { value: 'en', label: 'English' },
+  { value: 'de', label: 'Deutsch' },
   { value: 'es', label: 'Español' },
   { value: 'fr', label: 'Français' },
   { value: 'pt-BR', label: 'Português (Brasil)' },
@@ -41,6 +43,7 @@ i18next.use(initReactI18next).init({
   compatibilityJSON: 'v4',
   resources: {
     en: { translation: en },
+    de: { translation: de },
     es: { translation: es },
     fr: { translation: fr },
     'pt-BR': { translation: ptBR },
