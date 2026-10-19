@@ -6,6 +6,7 @@ import en from './locales/en.json';
 import de from './locales/de.json';
 import es from './locales/es.json';
 import fr from './locales/fr.json';
+import itIT from './locales/it.json';
 import ptBR from './locales/pt-BR.json';
 
 // Each language is named in itself: someone who cannot read the current one must still find theirs.
@@ -14,6 +15,7 @@ export const LANGUAGE_OPTIONS = [
   { value: 'de', label: 'Deutsch' },
   { value: 'es', label: 'Español' },
   { value: 'fr', label: 'Français' },
+  { value: 'it', label: 'Italiano' },
   { value: 'pt-BR', label: 'Português (Brasil)' },
 ] as const;
 export type SupportedLanguage = (typeof LANGUAGE_OPTIONS)[number]['value'];
@@ -46,6 +48,7 @@ i18next.use(initReactI18next).init({
     de: { translation: de },
     es: { translation: es },
     fr: { translation: fr },
+    it: { translation: itIT },
     'pt-BR': { translation: ptBR },
   },
   lng: resolveSupportedLanguage(getDeviceLocale()),
