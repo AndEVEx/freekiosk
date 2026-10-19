@@ -3,11 +3,19 @@ import { initReactI18next } from 'react-i18next';
 import { I18nManager, NativeModules, Platform } from 'react-native';
 import { StorageService } from '../utils/storage';
 import en from './locales/en.json';
+import es from './locales/es.json';
 import fr from './locales/fr.json';
 import ptBR from './locales/pt-BR.json';
 
-export const SUPPORTED_LANGUAGES = ['en', 'fr', 'pt-BR'] as const;
-export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number];
+// Each language is named in itself: someone who cannot read the current one must still find theirs.
+export const LANGUAGE_OPTIONS = [
+  { value: 'en', label: 'English' },
+  { value: 'es', label: 'Español' },
+  { value: 'fr', label: 'Français' },
+  { value: 'pt-BR', label: 'Português (Brasil)' },
+] as const;
+export type SupportedLanguage = (typeof LANGUAGE_OPTIONS)[number]['value'];
+export const SUPPORTED_LANGUAGES: readonly SupportedLanguage[] = LANGUAGE_OPTIONS.map((o) => o.value);
 
 function getDeviceLocale(): string {
   const locale =
@@ -33,6 +41,7 @@ i18next.use(initReactI18next).init({
   compatibilityJSON: 'v4',
   resources: {
     en: { translation: en },
+    es: { translation: es },
     fr: { translation: fr },
     'pt-BR': { translation: ptBR },
   },

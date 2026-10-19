@@ -191,7 +191,7 @@ it is stable and feature-complete, and **no date is set**.
 | **Auto-brightness** | Shipped | Sensor-based adjustment |
 | **App Management** | Shipped | External app control, single and multi-app modes |
 | **Remote Configuration** | Shipped (open beta) | Pushed from FreeKiosk Cloud, per device or group |
-| **Multi-language** | Planned | The app UI is English only; the cloud dashboard is already EN/FR |
+| **Multi-language** | Shipped | English, French, Brazilian Portuguese and Spanish; follows the device language unless one is chosen in Settings |
 | **Content Filtering** | Planned | URL allow and block lists |
 | **Advanced Analytics** | Planned | Usage metrics beyond the current live telemetry |
 | **Enhanced Notifications** | Planned | Custom alerts |

@@ -32,7 +32,7 @@ import MediaCacheStatus from '../../../components/settings/MediaCacheStatus';
 import SignageManagedNotice from '../../../components/settings/SignageManagedNotice';
 import type { PickedFile } from '../../../utils/FilePickerModule';
 import { useTranslation } from 'react-i18next';
-import type { SupportedLanguage } from '../../../i18n';
+import { LANGUAGE_OPTIONS, type SupportedLanguage } from '../../../i18n';
 
 interface GeneralTabProps {
   // Language
@@ -321,11 +321,7 @@ const GeneralTab: React.FC<GeneralTabProps> = ({
       <SettingsSection title={t('general.language.title')} icon="translate">
         <SettingsRadioGroup
           label={t('general.language.label')}
-          options={[
-            { value: 'en', label: 'English' },
-            { value: 'fr', label: 'Français' },
-            { value: 'pt-BR', label: 'Português (Brasil)' },
-          ]}
+          options={[...LANGUAGE_OPTIONS]}
           value={language}
           onValueChange={(v) => onLanguageChange(v as SupportedLanguage)}
         />
