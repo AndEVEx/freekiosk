@@ -1,5 +1,6 @@
 package com.freekiosk
 
+import android.annotation.SuppressLint
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate
 import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.fabricEnabled
@@ -1363,6 +1364,13 @@ class MainActivity : ReactActivity() {
   }
   // ===== END #180 native tap-to-settings fallback =====
 
+  // Left as it is on purpose. Measured on an Android 15 emulator (release build): pressing Back
+  // does not reach this method there, and Back still works (React Native's BackHandler gets it);
+  // on Android 16 React Native calls it from its own back callback (ReactActivity), and below
+  // Android 13 the platform does. For the three valid modes the body ends in super.onBackPressed(),
+  // so it only differs from the default for an unknown back_button_mode set by hand over ADB.
+  // Moving it to an OnBackPressedCallback would change what Back does on Android 13 to 15.
+  @SuppressLint("GestureBackNavigation")
   override fun onBackPressed() {
     val prefs = getSharedPreferences("FreeKioskSettings", Context.MODE_PRIVATE)
     val backButtonMode = prefs.getString("back_button_mode", "test") ?: "test"

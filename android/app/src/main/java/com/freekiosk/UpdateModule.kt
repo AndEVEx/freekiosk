@@ -1,5 +1,6 @@
 package com.freekiosk
 
+import androidx.core.content.ContextCompat
 import android.app.DownloadManager
 import android.app.admin.DevicePolicyManager
 import android.content.BroadcastReceiver
@@ -295,11 +296,8 @@ class UpdateModule(reactContext: ReactApplicationContext) : ReactContextBaseJava
             // Register receiver for download completion
             // RECEIVER_EXPORTED est nécessaire pour recevoir les broadcasts système du DownloadManager
             val filter = IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                reactApplicationContext.registerReceiver(downloadReceiver, filter, Context.RECEIVER_EXPORTED)
-            } else {
-                reactApplicationContext.registerReceiver(downloadReceiver, filter)
-            }
+            // ContextCompat passes the flag from Android 13 and registers as before below it.
+            ContextCompat.registerReceiver(reactApplicationContext, downloadReceiver, filter, ContextCompat.RECEIVER_EXPORTED)
             
             android.util.Log.d("UpdateModule", "Download started with ID: $downloadId")
             downloadHandled = false

@@ -308,6 +308,9 @@ class AudioControlModule(private val reactContext: ReactApplicationContext) :
                 ?.filter { isBluetoothDeviceConnected(it) }
                 ?.toList()
                 .orEmpty()
+        } catch (_: SecurityException) {
+            // BLUETOOTH_CONNECT revoked after the check above
+            emptyList()
         } catch (_: Exception) {
             emptyList()
         }

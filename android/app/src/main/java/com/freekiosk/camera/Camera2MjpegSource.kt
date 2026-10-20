@@ -1,5 +1,6 @@
 package com.freekiosk.camera
 
+import android.annotation.SuppressLint
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
@@ -216,6 +217,8 @@ class Camera2MjpegSource(
 
     // ==================== Camera setup ====================
 
+    // CAMERA is checked at the top of start(), its only caller, which also catches SecurityException.
+    @SuppressLint("MissingPermission")
     private fun openCameraAndSession(
         cameraManager: CameraManager,
         cameraId: String,

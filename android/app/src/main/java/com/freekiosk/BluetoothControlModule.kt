@@ -185,7 +185,14 @@ class BluetoothControlModule(private val reactContext: ReactApplicationContext) 
                             map.putString("address", device.address)
                             map.putString("name", getDeviceDisplayName(device, advertisedName))
                             map.putInt("rssi", rssi)
-                            map.putBoolean("bonded", device.bondState == BluetoothDevice.BOND_BONDED)
+                            // bondState needs BLUETOOTH_CONNECT on Android 12+ while startDiscovery only
+                            // checks BLUETOOTH_SCAN: an exception here would leave onReceive and kill the app.
+                            val bonded = try {
+                                device.bondState == BluetoothDevice.BOND_BONDED
+                            } catch (_: SecurityException) {
+                                false
+                            }
+                            map.putBoolean("bonded", bonded)
                             sendEvent("bluetoothDeviceFound", map)
                         }
                         BluetoothAdapter.ACTION_DISCOVERY_FINISHED -> {
@@ -216,6 +223,9 @@ class BluetoothControlModule(private val reactContext: ReactApplicationContext) 
             unregisterDiscoveryReceiver()
             getAdapter()?.cancelDiscovery()
             promise.resolve(true)
+        } catch (e: SecurityException) {
+            // BLUETOOTH_SCAN not granted
+            promise.reject("STOP_DISCOVERY_ERROR", e.message, e)
         } catch (e: Exception) {
             promise.reject("STOP_DISCOVERY_ERROR", e.message, e)
         }
@@ -443,8 +453,13 @@ class BluetoothControlModule(private val reactContext: ReactApplicationContext) 
 
     private fun unregisterDiscoveryReceiver() {
         discoveryReceiver?.let {
+            // cancelDiscovery needs BLUETOOTH_SCAN on Android 12+; without it the receiver must
+            // still be unregistered.
             try {
                 getAdapter()?.cancelDiscovery()
+            } catch (_: SecurityException) {
+            } catch (_: Exception) {}
+            try {
                 reactContext.unregisterReceiver(it)
             } catch (_: Exception) {}
             discoveryReceiver = null
