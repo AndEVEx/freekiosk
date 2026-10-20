@@ -663,13 +663,15 @@ class WifiControlModule(private val reactContext: ReactApplicationContext) :
             SSID = "\"$ssid\""
             if (password.isEmpty()) {
                 allowedKeyManagement.set(WifiConfiguration.KeyMgmt.NONE)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                // setSecurityParams is public from Android 11 (API 30), not Android 10. Below it,
+                // allowedKeyManagement above is what describes the network.
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                     setSecurityParams(WifiConfiguration.SECURITY_TYPE_OPEN)
                 }
             } else {
                 preSharedKey = "\"$password\""
                 allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_PSK)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                     setSecurityParams(WifiConfiguration.SECURITY_TYPE_PSK)
                 }
             }
@@ -751,7 +753,8 @@ class WifiControlModule(private val reactContext: ReactApplicationContext) :
             val admin = ComponentName(reactContext, DeviceAdminReceiver::class.java)
             if (!dpm.isDeviceOwnerApp(reactContext.packageName)) return
 
-            val currentPackages = dpm.getLockTaskPackages(admin)
+            // Android 7 cannot read the whitelist back: leave it as the lock task start built it.
+            val currentPackages = LockTaskCompat.readPackages(dpm, admin) ?: return
             if (wifiRequestOriginalLockTaskPackages == null) {
                 wifiRequestOriginalLockTaskPackages = currentPackages
             }

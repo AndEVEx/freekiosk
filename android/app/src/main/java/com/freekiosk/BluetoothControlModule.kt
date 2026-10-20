@@ -473,7 +473,8 @@ class BluetoothControlModule(private val reactContext: ReactApplicationContext) 
             val admin = ComponentName(reactContext, DeviceAdminReceiver::class.java)
             if (!dpm.isDeviceOwnerApp(reactContext.packageName)) return
 
-            val currentPackages = dpm.getLockTaskPackages(admin)
+            // Android 7 cannot read the whitelist back: leave it as the lock task start built it.
+            val currentPackages = LockTaskCompat.readPackages(dpm, admin) ?: return
             if (bluetoothPairingOriginalLockTaskPackages == null) {
                 bluetoothPairingOriginalLockTaskPackages = currentPackages
             }

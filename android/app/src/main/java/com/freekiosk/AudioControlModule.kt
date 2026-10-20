@@ -522,6 +522,13 @@ class AudioControlModule(private val reactContext: ReactApplicationContext) :
         }
     }
 
+    /** AudioDeviceInfo.getAddress exists from Android 9 (API 28); null below. */
+    private fun deviceAddress(dev: AudioDeviceInfo): String? =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) dev.address.ifBlank { null } else null
+
+    private fun bluetoothOutputId(kind: String, address: String?): String =
+        if (address == null) kind else "$kind::$address"
+
     private fun buildOutputList(am: AudioManager): WritableArray {
         val arr = Arguments.createArray()
 
@@ -543,23 +550,27 @@ class AudioControlModule(private val reactContext: ReactApplicationContext) :
             if (outputs.any { it.type == AudioDeviceInfo.TYPE_HDMI }) {
                 arr.pushMap(makeOutput("hdmi", "HDMI / Display", "hdmi"))
             }
-            // BT A2DP entries — one per connected device
+            // BT A2DP entries — one per connected device. AudioDeviceInfo.getAddress needs
+            // Android 9 (API 28): below it every device has the same id, "bluetooth_a2dp", which
+            // the selection already reads as "any Bluetooth A2DP output", so list it once.
             outputs
                 .filter { it.type == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP }
+                .distinctBy { deviceAddress(it) }
                 .forEach { dev ->
                     val name = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) dev.productName?.toString() else null
                     arr.pushMap(makeOutput(
-                        "bluetooth_a2dp::${dev.address}",
+                        bluetoothOutputId("bluetooth_a2dp", deviceAddress(dev)),
                         name ?: "Bluetooth (A2DP)",
                         "bluetooth_a2dp"
                     ))
                 }
             outputs
                 .filter { it.type == AudioDeviceInfo.TYPE_BLUETOOTH_SCO }
+                .distinctBy { deviceAddress(it) }
                 .forEach { dev ->
                     val name = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) dev.productName?.toString() else null
                     arr.pushMap(makeOutput(
-                        "bluetooth_sco::${dev.address}",
+                        bluetoothOutputId("bluetooth_sco", deviceAddress(dev)),
                         name ?: "Bluetooth Headset",
                         "bluetooth_sco"
                     ))

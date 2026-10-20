@@ -332,7 +332,8 @@ class KioskModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
             val admin = ComponentName(reactApplicationContext, DeviceAdminReceiver::class.java)
             if (!dpm.isDeviceOwnerApp(reactApplicationContext.packageName)) return
 
-            val currentPackages = dpm.getLockTaskPackages(admin)
+            // Android 7 cannot read the whitelist back: leave it as the lock task start built it.
+            val currentPackages = LockTaskCompat.readPackages(dpm, admin) ?: return
             if (batteryDialogOriginalLockTaskPackages == null) {
                 batteryDialogOriginalLockTaskPackages = currentPackages
             }
@@ -1858,7 +1859,8 @@ class KioskModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
             if (!dpm.isDeviceOwnerApp(reactApplicationContext.packageName)) return
 
             val adminComponent = ComponentName(reactApplicationContext, DeviceAdminReceiver::class.java)
-            val currentPackages = dpm.getLockTaskPackages(adminComponent).toMutableSet()
+            // Android 7 cannot read the whitelist back: leave it as the lock task start built it.
+            val currentPackages = (LockTaskCompat.readPackages(dpm, adminComponent) ?: return).toMutableSet()
             val updatedPackages = currentPackages.toMutableSet()
             updatedPackages.addAll(getEmergencyDialerPackages())
 

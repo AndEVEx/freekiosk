@@ -100,8 +100,9 @@ class AppLauncherModule(reactContext: ReactApplicationContext) : ReactContextBas
                                 }
                                 
                                 // Mettre à jour la whitelist pour inclure cette app
-                                val currentWhitelist = dpm.getLockTaskPackages(adminComponent).toMutableList()
-                                if (!currentWhitelist.contains(packageName)) {
+                                // Android 7 cannot read the whitelist back: leave it as the lock task start built it.
+                                val currentWhitelist = LockTaskCompat.readPackages(dpm, adminComponent)?.toMutableList()
+                                if (currentWhitelist != null && !currentWhitelist.contains(packageName)) {
                                     currentWhitelist.add(packageName)
                                     dpm.setLockTaskPackages(adminComponent, currentWhitelist.toTypedArray())
                                     DebugLog.d("AppLauncherModule", "Added $packageName to Lock Task whitelist")

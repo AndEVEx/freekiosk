@@ -75,6 +75,14 @@ object ScreenCapture {
         maxWidth: Int = 0,
     ): ByteArray? = synchronized(screenshotLock) {
         lastError = null
+        // PixelCopy.request(Window, ...) needs Android 8.0 (API 26) and the accessibility screenshot
+        // needs Android 11: below Android 8 there is no way to capture the WebView, and calling it
+        // would throw NoSuchMethodError.
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+            lastError = "Screenshots need Android 8.0 or later"
+            Log.e(TAG, "Screenshot unavailable: $lastError")
+            return null
+        }
         val foreground = reactContext.lifecycleState == LifecycleState.RESUMED
 
         if (foreground) {
@@ -111,6 +119,8 @@ object ScreenCapture {
         quality: Int,
         maxWidth: Int,
     ): ByteArray? {
+        // capture() already refuses below Android 8; this keeps the check next to the API it protects.
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return null
         return try {
             var screenshot: ByteArray? = null
             val latch = java.util.concurrent.CountDownLatch(1)

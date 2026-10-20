@@ -125,7 +125,7 @@ object BrightnessPrefs {
         }
         if (previous < 0) return
         try {
-            if (isDeviceOwnerWithSystemSetting(context)) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && isDeviceOwnerWithSystemSetting(context)) {
                 val dpm =
                     context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
                 dpm.setSystemSetting(
@@ -211,7 +211,7 @@ object BrightnessPrefs {
             .toInt()
             .coerceIn(0, SYSTEM_BRIGHTNESS_MAX)
 
-        if (isDeviceOwnerWithSystemSetting(context)) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && isDeviceOwnerWithSystemSetting(context)) {
             try {
                 val dpm =
                     context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
