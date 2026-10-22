@@ -25,6 +25,16 @@
 
 FreeKiosk is an open-source kiosk platform for Android tablets, built for teams that want **full control without license costs**.
 
+<p align="center">
+  <a href="https://play.google.com/store/apps/details?id=com.freekiosk"><img src="https://img.shields.io/badge/Google%20Play-Get%20it-34A853?logo=googleplay&logoColor=white" alt="Get it on Google Play"></a>
+  <a href="https://github.com/rushb-fr/freekiosk/releases/latest"><img src="https://img.shields.io/badge/APK-GitHub%20Releases-181717?logo=github&logoColor=white" alt="Download the APK from GitHub Releases"></a>
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/any-web-page-full-screen.png" alt="FreeKiosk showing a web page full screen on a tablet (demo page)" width="49%">
+  <img src="docs/screenshots/lock-it-down.png" alt="FreeKiosk Security settings with Lock Mode on (demo)" width="49%">
+</p>
+
 Instead of burying everything in one long page, this README gives you the essentials and points to complete docs in `docs/`.
 
 ### Why teams choose it
@@ -35,20 +45,21 @@ Instead of burying everything in one long page, this README gives you the essent
 - ✅ Native REST API and MQTT integration
 - ✅ Headless ADB provisioning for mass rollout
 - ✅ Privacy-first: no mandatory tracking layer
+- ✅ Available in English, French and Brazilian Portuguese
 
 ## ✨ Key capabilities
 
 | Area | What you get | Deep dive |
 |---|---|---|
-| Kiosk modes | WebView, External App, Dashboard, Media/Multi-App evolution | [Features and Modes](docs/features-and-modes.md) |
+| Kiosk modes | Website (WebView), External App, Dashboard of pages, Media Player (videos and images) | [Features and Modes](docs/features-and-modes.md) |
 | Device control | Lock task, boot behavior, status bar policies, PIN access | [Installation](docs/installation.md) |
 | Automation | 40+ REST endpoints, MQTT discovery for Home Assistant | [Integrations](docs/INTEGRATIONS.md) |
 | Provisioning | ADB command-based configuration and scripting | [ADB Configuration](docs/adb-configuration.md) |
-| Fleet management | Optional cloud enrollment, remote config, commands, OTA updates | See below |
+| Fleet management | Optional FreeKiosk Cloud (open beta): remote config, commands, screenshots, QR enrollment | See [FreeKiosk Cloud](#-freekiosk-cloud-open-beta) below |
 
 ## 📦 Install in 60 seconds
 
-1. Download the latest APK from [Releases](https://github.com/rushb-fr/freekiosk/releases).
+1. Install FreeKiosk from [Google Play](https://play.google.com/store/apps/details?id=com.freekiosk), or download the latest APK from [Releases](https://github.com/rushb-fr/freekiosk/releases).
 2. Install on Android 8.0+ tablet.
 3. Configure URL/app + PIN.
 4. Start kiosk mode.
@@ -76,27 +87,15 @@ adb shell dpm set-device-owner com.freekiosk/.DeviceAdminReceiver
 
 ## ☁️ FreeKiosk Cloud (open beta)
 
-From `v2.0.0-beta.1`, FreeKiosk can enroll into **FreeKiosk Cloud**, a companion server that manages a fleet from a web dashboard: live telemetry, configuration pushed to devices or groups, remote commands, screenshots, and over-the-air app updates. A factory-reset tablet can be provisioned end to end by scanning a QR code at the Android setup wizard.
+**FreeKiosk Cloud** is a companion service that manages a fleet from a web dashboard: live status, configuration pushed to devices or groups, remote commands and screenshots. A tablet can be enrolled by scanning a QR code, and a factory-reset tablet can be provisioned end to end from the Android setup wizard.
 
-**It is an open beta, self-service sign-up.** The `v2.0.0-beta.x` builds are published as GitHub **pre-releases**: the feature works and is in daily use, but the OTA update path, QR provisioning and Lock Mode behaviour have not yet been proven across enough real hardware for us to call it done. Sign up at [cloud.freekiosk.app](https://cloud.freekiosk.app).
+**The cloud is in open beta, with self-service sign-up** at [cloud.freekiosk.app](https://cloud.freekiosk.app): the first device is free, then it is priced per device (see [freekiosk.app/cloud](https://freekiosk.app/cloud)). The app itself, `v2.0.0`, is stable. Some cloud paths (over-the-air app updates, QR provisioning, Lock Mode behaviour on every model) have not been proven across enough real hardware for us to call the cloud finished.
 
 **The app itself is unaffected.** FreeKiosk stays free and MIT licensed, and the cloud is entirely opt-in: nothing leaves the device until you enroll it. Every kiosk feature, the REST API and the MQTT integration work exactly as before without a cloud account, and always will.
 
 > [!NOTE]
-> **The management server will be released as open source, so you can self-host it.**
-> That is the intended end state, not an afterthought: a kiosk platform you cannot host yourself is only half free. We are holding it back until it is stable and feature-complete rather than publishing something that would be painful to run. **No date is set**, and we would rather say that plainly than announce one we might miss.
-
-## 🥊 FreeKiosk vs Fully Kiosk Browser
-
-| Feature | FreeKiosk | Fully Kiosk |
-|---------|-----------|-------------|
-| Price | 🟢 Free | 🔴 Paid per device |
-| Open-source | 🟢 MIT | 🔴 Closed source |
-| Device Owner mode | ✅ | ✅ |
-| REST API | ✅ | ✅ |
-| MQTT + Home Assistant discovery | ✅ | ❌ |
-| Cloud fleet management | 🔵 Open beta (see below) | ✅ |
-| Self-hostable management server | 🔵 Planned, once stable | 🔴 Hosted only |
+> **The management server will be released as open source in 2027, so you can self-host it.**
+> That is the intended end state, not an afterthought: a kiosk platform you cannot host yourself is only half free. We are holding it back until it is stable and feature-complete rather than publishing something that would be painful to run.
 
 ## 🛠️ Tech stack
 
@@ -107,9 +106,9 @@ From `v2.0.0-beta.1`, FreeKiosk can enroll into **FreeKiosk Cloud**, a companion
 ## 🗺️ Roadmap snapshot
 
 - `v1.2.x`: reliability and operational hardening (shipped)
-- `v2.0.0-beta.x`: cloud fleet management, in open beta
-- `v2.0.0`: cloud out of beta, once the OTA update path, QR provisioning and Lock Mode behaviour are proven on real fleets
-- later: the management server released for self-hosting
+- `v2.0.0`: stable app, with optional cloud enrollment (shipped)
+- FreeKiosk Cloud: open beta, until the OTA update path, QR provisioning and Lock Mode behaviour are proven on real fleets
+- 2027: the management server released as open source for self-hosting
 
 Detailed notes: [docs/roadmap-and-changelog.md](docs/roadmap-and-changelog.md)
 
