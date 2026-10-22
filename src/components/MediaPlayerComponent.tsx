@@ -176,6 +176,9 @@ export function generatePlayerHTML(settings: {
     url: i.url,
     type: i.type,
     duration: i.duration || imageDuration,
+    // A YouTube video has no duration of its own to show: this is only a cap, set when the cloud gave one
+    capSeconds: i.type === 'youtube' && i.duration ? i.duration : 0,
+    videoId: i.videoId || '',
     title: i.title || '',
   }))).replace(
     new RegExp('[<' + String.fromCharCode(0x2028, 0x2029) + ']', 'g'),
@@ -217,6 +220,14 @@ export function generatePlayerHTML(settings: {
     width: 100%; height: 100%;
     object-fit: ${fitMode};
     display: block;
+  }
+  /* A page or a YouTube video: not interactive, so a tap reaches the player (secret gesture) */
+  .media-slot iframe {
+    width: 100%; height: 100%;
+    border: 0;
+    display: block;
+    background: #000;
+    pointer-events: none;
   }
   
   /* Controls overlay */
@@ -460,6 +471,8 @@ export function generatePlayerHTML(settings: {
     if (imageTimer) { clearTimeout(imageTimer); imageTimer = null; }
     if (errorRetryTimer) { clearTimeout(errorRetryTimer); errorRetryTimer = null; }
     if (guardTimer) { clearInterval(guardTimer); guardTimer = null; }
+    if (frameTimer) { clearTimeout(frameTimer); frameTimer = null; }
+    if (frameMessageHandler) { window.removeEventListener('message', frameMessageHandler); frameMessageHandler = null; }
     stopProgress();
   }
   
@@ -479,6 +492,113 @@ export function generatePlayerHTML(settings: {
     }, SETTINGS.transitionEnabled ? SETTINGS.transitionDuration + 100 : 50);
   }
   
+
+  // A web page and a YouTube video are shown live: they need the network and have no offline copy.
+  // Without it the item is skipped, after a pause so that a playlist made only of them does not spin.
+  var frameTimer = null;
+  var frameMessageHandler = null;
+  function isOffline() { return typeof navigator !== 'undefined' && navigator.onLine === false; }
+  function skipLater(ms) {
+    if (errorRetryTimer) clearTimeout(errorRetryTimer);
+    errorRetryTimer = setTimeout(function() { hideError(); advanceToNext(); }, ms || 3000);
+  }
+
+  // A frame that neither loads nor reports must not hold the screen
+  function watchFrame(isShown, label) {
+    if (frameTimer) clearTimeout(frameTimer);
+    frameTimer = setTimeout(function() {
+      frameTimer = null;
+      if (isShown()) return;
+      hideLoading();
+      showError('Failed to load ' + label);
+      skipLater(SETTINGS.unattended ? 0 : 3000);
+    }, GUARD_LIMIT_MS);
+  }
+
+  function makeFrame(src) {
+    var frame = document.createElement('iframe');
+    frame.setAttribute('scrolling', 'no');
+    frame.setAttribute('allowfullscreen', '');
+    frame.src = src;
+    return frame;
+  }
+
+  function loadWeb(slot, item, first) {
+    if (isOffline()) { hideLoading(); skipLater(3000); return; }
+    showLoading();
+    var dur = item.duration || 30;
+    var shown = false;
+    var frame = makeFrame(item.url);
+    // Scripts and forms for the page to work, no top navigation and no popups: the page cannot
+    // take the player over
+    frame.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms');
+    frame.addEventListener('load', function() {
+      if (shown) return;
+      shown = true;
+      hideLoading();
+      if (first) slotA.classList.add('active'); else swapSlots();
+      if (isPlaying) {
+        if (SETTINGS.showControls) startProgress(dur);
+        imageTimer = setTimeout(function() { advanceToNext(); }, dur * 1000);
+      }
+    });
+    slot.appendChild(frame);
+    watchFrame(function() { return shown; }, 'web page');
+  }
+
+  function loadYoutube(slot, item, first) {
+    if (isOffline()) { hideLoading(); skipLater(3000); return; }
+    showLoading();
+    var shown = false;
+    var finished = false;
+    var src = 'https://www.youtube.com/embed/' + encodeURIComponent(item.videoId) +
+      '?autoplay=1&controls=0&playsinline=1&rel=0&modestbranding=1&iv_load_policy=3&enablejsapi=1&mute=' +
+      (SETTINGS.muteVideo ? '1' : '0');
+    var frame = makeFrame(src);
+    frame.setAttribute('allow', 'autoplay; encrypted-media');
+    frame.setAttribute('sandbox', 'allow-scripts allow-same-origin');
+    function finish() {
+      if (finished) return;
+      finished = true;
+      if (isPlaying) advanceToNext();
+    }
+    frameMessageHandler = function(ev) {
+      if (ev.source !== frame.contentWindow) return;
+      var data = ev.data;
+      if (typeof data === 'string') { try { data = JSON.parse(data); } catch (e) { return; } }
+      if (!data || typeof data !== 'object') return;
+      var state = null;
+      if (data.event === 'onStateChange') state = data.info;
+      else if (data.event === 'infoDelivery' && data.info && typeof data.info.playerState === 'number') state = data.info.playerState;
+      if (data.event === 'onError') {
+        // A video that cannot be embedded (owner's choice, removed, private)
+        hideLoading();
+        showError('This YouTube video cannot be played');
+        skipLater(SETTINGS.unattended ? 0 : 3000);
+        return;
+      }
+      if (state === 1 && !shown) {
+        shown = true;
+        hideLoading();
+        if (first) slotA.classList.add('active'); else swapSlots();
+        // An optional cap; otherwise the video ends the item
+        if (isPlaying && item.capSeconds) imageTimer = setTimeout(finish, item.capSeconds * 1000);
+      }
+      if (state === 0 && shown) finish();
+    };
+    window.addEventListener('message', frameMessageHandler);
+    frame.addEventListener('load', function() {
+      var target = frame.contentWindow;
+      if (!target) return;
+      // Ask the player to report its state changes and errors
+      target.postMessage(JSON.stringify({ event: 'listening', id: 1, channel: 'widget' }), 'https://www.youtube.com');
+      target.postMessage(JSON.stringify({ event: 'command', func: 'addEventListener', args: ['onStateChange'], id: 1, channel: 'widget' }), 'https://www.youtube.com');
+      target.postMessage(JSON.stringify({ event: 'command', func: 'addEventListener', args: ['onError'], id: 1, channel: 'widget' }), 'https://www.youtube.com');
+    });
+    slot.appendChild(frame);
+    watchFrame(function() { return shown; }, 'YouTube video');
+  }
+
   function loadMedia(index) {
     if (playlist.length === 0) return;
     
@@ -494,6 +614,10 @@ export function generatePlayerHTML(settings: {
     
     if (item.type === 'video') {
       loadVideo(slot, item, realIdx);
+    } else if (item.type === 'web') {
+      loadWeb(slot, item, false);
+    } else if (item.type === 'youtube') {
+      loadYoutube(slot, item, false);
     } else {
       loadImage(slot, item, realIdx);
     }
@@ -676,7 +800,11 @@ export function generatePlayerHTML(settings: {
     var firstRealIdx = getPlaylistIndex(0);
     var firstItem = playlist[firstRealIdx];
     
-    if (firstItem.type === 'video') {
+    if (firstItem.type === 'web') {
+      loadWeb(slotA, firstItem, true);
+    } else if (firstItem.type === 'youtube') {
+      loadYoutube(slotA, firstItem, true);
+    } else if (firstItem.type === 'video') {
       var video = document.createElement('video');
       video.src = firstItem.url;
       video.autoplay = isPlaying;

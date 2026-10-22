@@ -40,6 +40,15 @@ describe('collectCacheableUrls', () => {
     expect(urls).toEqual(['https://cdn.test/a.mp4', 'http://cdn.test/b.jpg']);
   });
 
+  it('never downloads a web page or a YouTube video: they are shown live', () => {
+    const urls = collectCacheableUrls([
+      item('1', 'https://cdn.test/a.mp4'),
+      item('2', 'https://example.com/menu', { type: 'web' }),
+      item('3', 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', { type: 'youtube' }),
+    ]);
+    expect(urls).toEqual(['https://cdn.test/a.mp4']);
+  });
+
   it('lists a URL once even when the playlist plays it twice', () => {
     const urls = collectCacheableUrls([
       item('1', 'https://cdn.test/a.mp4'),

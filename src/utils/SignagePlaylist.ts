@@ -41,7 +41,14 @@ export interface ManifestItem {
   url?: unknown;
   title?: unknown;
   duration_seconds?: unknown;
+  video_id?: unknown;
 }
+
+/** How long a web page stays when the cloud gives no duration, and the bounds of any duration */
+export const WEB_DEFAULT_SECONDS = 30;
+export const WEB_MIN_SECONDS = 5;
+export const WEB_MAX_SECONDS = 3600;
+const YOUTUBE_ID = /^[A-Za-z0-9_-]{11}$/;
 
 export interface PlaylistManifest {
   version: string | null;
@@ -82,29 +89,40 @@ interface Credentials {
 }
 
 /**
- * The items the player can use. Anything that is not a well formed http(s) video or image
- * is dropped, so one bad entry never stops the rest of the playlist. The item id the cloud
- * gave is kept: it does not change when the item is edited.
+ * The items the player can use: http(s) videos, images and web pages, and YouTube videos given by
+ * their id. Anything else is dropped, so one bad entry never stops the rest of the playlist. The
+ * item id the cloud gave is kept: it does not change when the item is edited.
  */
 export function manifestToItems(items: ManifestItem[] | undefined | null): MediaItem[] {
   const out: MediaItem[] = [];
   for (const raw of Array.isArray(items) ? items : []) {
     if (!raw || typeof raw !== 'object') continue;
     const kind = raw.kind;
-    const url = typeof raw.url === 'string' ? raw.url.trim() : '';
-    if (kind !== 'video' && kind !== 'image') continue;
-    if (!/^https?:\/\/\S+$/i.test(url)) continue;
-    const item: MediaItem = {
-      id: typeof raw.id === 'string' && raw.id ? raw.id : `signage-${out.length}`,
-      url,
-      type: kind,
-      isLocal: false,
-    };
-    if (typeof raw.title === 'string' && raw.title) item.title = raw.title;
-    // A duration only means something for an image: a video plays to its end
-    if (kind === 'image' && typeof raw.duration_seconds === 'number' && raw.duration_seconds > 0) {
-      item.duration = Math.round(raw.duration_seconds);
+    const id = typeof raw.id === 'string' && raw.id ? raw.id : `signage-${out.length}`;
+    const seconds = typeof raw.duration_seconds === 'number' && raw.duration_seconds > 0
+      ? Math.round(raw.duration_seconds)
+      : null;
+    let item: MediaItem;
+    if (kind === 'youtube') {
+      const videoId = typeof raw.video_id === 'string' ? raw.video_id.trim() : '';
+      if (!YOUTUBE_ID.test(videoId)) continue;
+      // The address is only for the logs: the player builds the embed address from the id
+      item = { id, url: `https://www.youtube.com/watch?v=${videoId}`, type: 'youtube', videoId, isLocal: false };
+      // Optional: stop the video after so many seconds (it otherwise plays to its end)
+      if (seconds !== null) item.duration = Math.min(seconds, WEB_MAX_SECONDS);
+    } else {
+      const url = typeof raw.url === 'string' ? raw.url.trim() : '';
+      if (kind !== 'video' && kind !== 'image' && kind !== 'web') continue;
+      if (!/^https?:\/\/\S+$/i.test(url)) continue;
+      item = { id, url, type: kind, isLocal: false };
+      // A duration only means something for an image and a web page: a video plays to its end
+      if (kind === 'image' && seconds !== null) item.duration = seconds;
+      // A page has no end of its own: it always has a duration
+      if (kind === 'web') {
+        item.duration = Math.min(Math.max(seconds ?? WEB_DEFAULT_SECONDS, WEB_MIN_SECONDS), WEB_MAX_SECONDS);
+      }
     }
+    if (typeof raw.title === 'string' && raw.title) item.title = raw.title;
     out.push(item);
   }
   return out;

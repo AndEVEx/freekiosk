@@ -29,6 +29,9 @@ export type Capability =
   | 'tts'
   | 'toast'
   | 'url'
+  // A cloud playlist can hold web pages and YouTube videos: the dashboard warns when an older app cannot
+  | 'signage_web'
+  | 'signage_youtube'
   // Device Owner gated
   | 'device_owner'
   | 'reboot'
@@ -52,6 +55,8 @@ const BASELINE: Capability[] = [
   'tts',
   'toast',
   'url',
+  'signage_web',
+  'signage_youtube',
 ];
 
 async function safe<T>(p: Promise<T> | undefined, fallback: T): Promise<T> {

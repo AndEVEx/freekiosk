@@ -3,14 +3,16 @@
  * Defines types for the Media Player display mode (videos, images, playlists)
  */
 
-export type MediaItemType = 'video' | 'image';
+// A web page and a YouTube video only come from a cloud playlist (digital signage)
+export type MediaItemType = 'video' | 'image' | 'web' | 'youtube';
 
 export interface MediaItem {
   id: string;
   url: string;
   type: MediaItemType;
   title?: string;
-  duration?: number; // Display duration in seconds (for images; videos use their own duration)
+  duration?: number; // Display duration in seconds (images and web pages; videos use their own; a YouTube video: an optional cap)
+  videoId?: string; // YouTube video id, only for type 'youtube'
   isLocal?: boolean; // True if the file is from device storage (file:// URI)
   fileName?: string; // Original filename for local files
 }

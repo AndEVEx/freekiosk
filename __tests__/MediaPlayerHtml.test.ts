@@ -41,3 +41,44 @@ describe('the playlist inside the player page', () => {
     expect(playlist[0].url).toBe('https://cdn.test/a.mp4');
   });
 });
+
+describe('web pages and YouTube videos inside the player page', () => {
+  const html: string = generatePlayerHTML({
+    ...SETTINGS,
+    items: [
+      { id: 'a', url: 'https://example.com/menu', type: 'web', duration: 20, title: '</script>' },
+      { id: 'b', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', type: 'youtube', videoId: 'dQw4w9WgXcQ', duration: 45 },
+    ],
+  });
+
+  it('hands the player the type, the id and the cap, as data', () => {
+    const line = html.split('\n').find((l: string) => l.includes('var playlist = ')) as string;
+    const json = line.slice(line.indexOf('= ') + 2).replace(/;\s*$/, '');
+    const playlist = new Function(`return ${json};`)();
+    expect(playlist[0]).toMatchObject({ type: 'web', url: 'https://example.com/menu', duration: 20, capSeconds: 0 });
+    expect(playlist[1]).toMatchObject({ type: 'youtube', videoId: 'dQw4w9WgXcQ', capSeconds: 45 });
+    expect(html.match(/<\/script>/gi)).toHaveLength(1);
+  });
+
+  it('frames a page in a sandbox, without top navigation or popups, and not interactive', () => {
+    expect(html).toContain("frame.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms')");
+    expect(html).not.toContain('allow-top-navigation');
+    expect(html).not.toContain('allow-popups');
+    expect(html).toContain('pointer-events: none');
+  });
+
+  it('skips a page and a video when the device is offline instead of showing an error frame', () => {
+    expect(html).toContain('function isOffline()');
+    expect((html.match(/if \(isOffline\(\)\)/g) || []).length).toBe(2);
+  });
+
+  it('listens to the YouTube player only from its own frame and ends the item at the end of the video', () => {
+    expect(html).toContain('ev.source !== frame.contentWindow');
+    expect(html).toContain("'https://www.youtube.com/embed/'");
+    expect(html).toContain('if (state === 0 && shown) finish();');
+  });
+
+  it('puts no value of the playlist in the embed address except the encoded id', () => {
+    expect(html).toContain('encodeURIComponent(item.videoId)');
+  });
+});

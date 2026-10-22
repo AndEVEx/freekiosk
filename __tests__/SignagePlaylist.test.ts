@@ -210,6 +210,21 @@ describe('SignagePlaylist.sync', () => {
   });
 });
 
+describe('a schedule with web pages and YouTube videos', () => {
+  it('reads them in the playlists of the schedule', () => {
+    const schedule = parseSchedule({
+      default_playlist: 'menu',
+      playlists: {
+        menu: { name: 'Menu', items: [{ id: 'w', kind: 'web', url: 'https://example.com/a', duration_seconds: 15 }] },
+        promo: { name: 'Promo', items: [{ id: 'y', kind: 'youtube', video_id: 'dQw4w9WgXcQ' }, { id: 'x', kind: 'youtube', video_id: 'bad' }] },
+      },
+      rules: [{ playlist: 'promo', days: [1], start: '10:00', end: '11:00', from: null, to: null }],
+    } as any);
+    expect(schedule?.playlists.menu.items.map((i: any) => [i.type, i.duration])).toEqual([['web', 15]]);
+    expect(schedule?.playlists.promo.items.map((i: any) => i.type)).toEqual(['youtube']);
+  });
+});
+
 describe('manifestToItems', () => {
   it('keeps the ids the cloud gave, in order', () => {
     const items = manifestToItems([VIDEO, IMAGE]);
@@ -237,6 +252,70 @@ describe('manifestToItems', () => {
     expect(items.map((i: any) => i.url)).toEqual(['https://cdn.test/f.png', 'https://cdn.test/g.mp4']);
     expect(items[0].duration).toBeUndefined();
     expect(items[1].id).toBe('signage-1'); // no id given: a stable fallback by position
+  });
+
+  describe('a web page', () => {
+    const PAGE = { id: 'w1', kind: 'web', url: 'https://example.com/menu', title: 'Menu', duration_seconds: 20 };
+
+    it('is kept, with its address and its duration', () => {
+      const [page] = manifestToItems([PAGE]);
+      expect(page).toMatchObject({ id: 'w1', type: 'web', url: 'https://example.com/menu', duration: 20, title: 'Menu' });
+    });
+
+    it('always has a duration: 30 seconds when the cloud gives none or a bad one', () => {
+      for (const duration_seconds of [undefined, null, 0, -3, 'ten']) {
+        const [page] = manifestToItems([{ ...PAGE, duration_seconds }]);
+        expect(page.duration).toBe(30);
+      }
+    });
+
+    it('keeps its duration between 5 seconds and an hour', () => {
+      expect(manifestToItems([{ ...PAGE, duration_seconds: 1 }])[0].duration).toBe(5);
+      expect(manifestToItems([{ ...PAGE, duration_seconds: 99999 }])[0].duration).toBe(3600);
+    });
+
+    it('is dropped when its address is not http or https, the rest keeps playing', () => {
+      const items = manifestToItems([
+        { ...PAGE, id: 'a', url: 'javascript:alert(1)' },
+        { ...PAGE, id: 'b', url: 'file:///data/data/com.freekiosk/databases' },
+        { ...PAGE, id: 'c', url: 'data:text/html,<script>1</script>' },
+        { ...PAGE, id: 'd', url: '' },
+        { ...PAGE, id: 'e' },
+      ]);
+      expect(items.map((i: any) => i.id)).toEqual(['e']);
+    });
+  });
+
+  describe('a YouTube video', () => {
+    const VIDEO_ID = 'dQw4w9WgXcQ';
+    const YT = { id: 'y1', kind: 'youtube', video_id: VIDEO_ID, title: 'Promo' };
+
+    it('is kept by its id, and its address is only the watch page', () => {
+      const [yt] = manifestToItems([YT]);
+      expect(yt).toMatchObject({ id: 'y1', type: 'youtube', videoId: VIDEO_ID, title: 'Promo' });
+      expect(yt.url).toBe(`https://www.youtube.com/watch?v=${VIDEO_ID}`);
+    });
+
+    it('plays to its end unless the cloud gives a cap, kept at most an hour', () => {
+      expect(manifestToItems([YT])[0].duration).toBeUndefined();
+      expect(manifestToItems([{ ...YT, duration_seconds: 45 }])[0].duration).toBe(45);
+      expect(manifestToItems([{ ...YT, duration_seconds: 999999 }])[0].duration).toBe(3600);
+      expect(manifestToItems([{ ...YT, duration_seconds: -1 }])[0].duration).toBeUndefined();
+    });
+
+    it('is dropped unless the id is exactly eleven letters, digits, - and _', () => {
+      const items = manifestToItems([
+        { ...YT, id: 'a', video_id: 'short' },
+        { ...YT, id: 'b', video_id: 'dQw4w9WgXcQ1' },
+        { ...YT, id: 'c', video_id: 'dQw4w9WgX"Q' },
+        { ...YT, id: 'd', video_id: '../../evil.' },
+        { ...YT, id: 'e', video_id: `https://youtu.be/${VIDEO_ID}` },
+        { ...YT, id: 'f', video_id: 123 },
+        { ...YT, id: 'g', video_id: undefined, url: `https://www.youtube.com/watch?v=${VIDEO_ID}` },
+        { ...YT, id: 'h', video_id: 'a-b_c-d_e-f' },
+      ]);
+      expect(items.map((i: any) => i.id)).toEqual(['h']);
+    });
   });
 
   it('copes with a missing or malformed list', () => {

@@ -40,6 +40,8 @@ export function collectCacheableUrls(items: MediaItem[]): string[] {
   const urls: string[] = [];
   for (const item of items ?? []) {
     if (item.isLocal) continue;
+    // A web page and a YouTube video are shown live: there is no file to keep
+    if (item.type === 'web' || item.type === 'youtube') continue;
     if (!/^https?:\/\//i.test(item.url ?? '')) continue;
     if (!urls.includes(item.url)) urls.push(item.url);
   }
