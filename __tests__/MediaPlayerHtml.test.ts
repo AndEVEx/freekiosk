@@ -47,7 +47,7 @@ describe('web pages and YouTube videos inside the player page', () => {
     ...SETTINGS,
     items: [
       { id: 'a', url: 'https://example.com/menu', type: 'web', duration: 20, title: '</script>' },
-      { id: 'b', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', type: 'youtube', videoId: 'dQw4w9WgXcQ', duration: 45 },
+      { id: 'b', url: 'https://cloud.test/player/youtube/?v=dQw4w9WgXcQ', type: 'youtube', videoId: 'dQw4w9WgXcQ', duration: 45 },
     ],
   });
 
@@ -72,13 +72,11 @@ describe('web pages and YouTube videos inside the player page', () => {
     expect((html.match(/if \(isOffline\(\)\)/g) || []).length).toBe(2);
   });
 
-  it('listens to the YouTube player only from its own frame and ends the item at the end of the video', () => {
-    expect(html).toContain('ev.source !== frame.contentWindow');
-    expect(html).toContain("'https://www.youtube.com/embed/'");
+  it('plays a YouTube video through the cloud page, and listens to it only from that origin', () => {
+    expect(html).toContain("item.url + (item.url.indexOf('?') >= 0 ? '&' : '?') + 'mute='");
+    expect(html).toContain('ev.source !== frame.contentWindow || !playerOrigin || ev.origin !== playerOrigin');
     expect(html).toContain('if (state === 0 && shown) finish();');
-  });
-
-  it('puts no value of the playlist in the embed address except the encoded id', () => {
-    expect(html).toContain('encodeURIComponent(item.videoId)');
+    // the player page of this app has no origin, so it cannot ask YouTube itself (error 153)
+    expect(html).not.toContain('https://www.youtube.com/embed/');
   });
 });

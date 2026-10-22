@@ -551,9 +551,11 @@ export function generatePlayerHTML(settings: {
     showLoading();
     var shown = false;
     var finished = false;
-    var src = 'https://www.youtube.com/embed/' + encodeURIComponent(item.videoId) +
-      '?autoplay=1&controls=0&playsinline=1&rel=0&modestbranding=1&iv_load_policy=3&enablejsapi=1&mute=' +
-      (SETTINGS.muteVideo ? '1' : '0');
+    // The cloud's page plays the video (YouTube refuses a page without an origin, like this one) and
+    // tells us what the player says: its own address is where the messages must come from
+    var src = item.url + (item.url.indexOf('?') >= 0 ? '&' : '?') + 'mute=' + (SETTINGS.muteVideo ? '1' : '0');
+    var playerOrigin = '';
+    try { playerOrigin = new URL(item.url).origin; } catch (e) { playerOrigin = ''; }
     var frame = makeFrame(src);
     frame.setAttribute('allow', 'autoplay; encrypted-media');
     frame.setAttribute('sandbox', 'allow-scripts allow-same-origin');
@@ -563,7 +565,7 @@ export function generatePlayerHTML(settings: {
       if (isPlaying) advanceToNext();
     }
     frameMessageHandler = function(ev) {
-      if (ev.source !== frame.contentWindow) return;
+      if (ev.source !== frame.contentWindow || !playerOrigin || ev.origin !== playerOrigin) return;
       var data = ev.data;
       if (typeof data === 'string') { try { data = JSON.parse(data); } catch (e) { return; } }
       if (!data || typeof data !== 'object') return;
@@ -587,14 +589,6 @@ export function generatePlayerHTML(settings: {
       if (state === 0 && shown) finish();
     };
     window.addEventListener('message', frameMessageHandler);
-    frame.addEventListener('load', function() {
-      var target = frame.contentWindow;
-      if (!target) return;
-      // Ask the player to report its state changes and errors
-      target.postMessage(JSON.stringify({ event: 'listening', id: 1, channel: 'widget' }), 'https://www.youtube.com');
-      target.postMessage(JSON.stringify({ event: 'command', func: 'addEventListener', args: ['onStateChange'], id: 1, channel: 'widget' }), 'https://www.youtube.com');
-      target.postMessage(JSON.stringify({ event: 'command', func: 'addEventListener', args: ['onError'], id: 1, channel: 'widget' }), 'https://www.youtube.com');
-    });
     slot.appendChild(frame);
     watchFrame(function() { return shown; }, 'YouTube video');
   }

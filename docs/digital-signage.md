@@ -1,6 +1,6 @@
 # Digital signage
 
-A screen plays a playlist of videos and images that you build in the FreeKiosk Cloud dashboard
+A screen plays a playlist of videos, images, web pages and YouTube videos that you build in the FreeKiosk Cloud dashboard
 (**Digital signage**), instead of typing the list on the device. It works on a tablet as well
 as on an Android TV, and it is open to every FreeKiosk Cloud account: one device is one screen.
 
@@ -104,8 +104,31 @@ A screen that plays a playlist from the cloud is not covered by the screensaver 
 would hide the playlist for good. The scheduled sleep (Screen Scheduler) still applies: the screen is
 black during the window and the playlist resumes after it. Checked on a tablet emulator against the cloud.
 
+## Web pages and YouTube videos
+
+A playlist item can also be a **web page** (shown full screen for a duration, 30 seconds when none is
+set, never less than 5) or a **YouTube video** (it plays to its end, with an optional cap). Both need
+the network and are **never kept in the offline cache**: a screen that is offline skips them, with no
+error on the screen, and plays the rest.
+
+- **A web page** is shown in a frame of the player page that takes no taps and cannot navigate away
+  from the player (`sandbox`, no top navigation, no popups). A site that forbids being shown inside
+  another page (`X-Frame-Options`, or a CSP `frame-ancestors`) shows an error page where it should be,
+  and the app cannot tell: the dashboard reads the site's headers when the page is added and warns.
+- **A YouTube video** is played by a page of the cloud (`/player/youtube/?v=<id>`), not by the player
+  itself: YouTube refuses to play for a page that has no origin (error 153), which is the case of the
+  player page of the app. The cloud's page holds the YouTube player and tells the player when the video
+  has ended or cannot be played; the player only listens to messages from that page's origin.
+- **An older app** drops what it does not know and plays the rest; the dashboard says "App too old" for
+  such a screen (the app reports `signage_web` and `signage_youtube` in its capabilities).
+
+Checked on an Android TV emulator against a local cloud: a playlist made of a web page, a YouTube video
+of 19 seconds and a page that forbids framing played in order and looped; the video item ended with the
+video, and a long video (Big Buck Bunny) also played; the framing refusal shows an empty frame. Not
+checked: the optional cap of a YouTube video, a physical device or box, a long run, a video that cannot be
+embedded, a live stream, and the terms of YouTube for use on a business's public screens (read them before relying on this).
+
 ## Not in this version
 
-Files uploaded to the cloud (items are URLs for now), a checksum of each file, web pages and
-YouTube as items, several zones on one screen, and a playback report. The contract between the
+A checksum of each file, several zones on one screen, and a playback report. The contract between the
 app and the cloud is in the cloud repository (`ANDROID_INTEGRATION.md`, section 1d).

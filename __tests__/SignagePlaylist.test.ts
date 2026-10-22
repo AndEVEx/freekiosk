@@ -216,7 +216,7 @@ describe('a schedule with web pages and YouTube videos', () => {
       default_playlist: 'menu',
       playlists: {
         menu: { name: 'Menu', items: [{ id: 'w', kind: 'web', url: 'https://example.com/a', duration_seconds: 15 }] },
-        promo: { name: 'Promo', items: [{ id: 'y', kind: 'youtube', video_id: 'dQw4w9WgXcQ' }, { id: 'x', kind: 'youtube', video_id: 'bad' }] },
+        promo: { name: 'Promo', items: [{ id: 'y', kind: 'youtube', video_id: 'dQw4w9WgXcQ', url: 'https://cloud.test/player/youtube/?v=dQw4w9WgXcQ' }, { id: 'x', kind: 'youtube', video_id: 'bad' }] },
       },
       rules: [{ playlist: 'promo', days: [1], start: '10:00', end: '11:00', from: null, to: null }],
     } as any);
@@ -288,12 +288,12 @@ describe('manifestToItems', () => {
 
   describe('a YouTube video', () => {
     const VIDEO_ID = 'dQw4w9WgXcQ';
-    const YT = { id: 'y1', kind: 'youtube', video_id: VIDEO_ID, title: 'Promo' };
+    const PLAYER = `https://cloud.test/player/youtube/?v=${VIDEO_ID}`;
+    const YT = { id: 'y1', kind: 'youtube', video_id: VIDEO_ID, url: PLAYER, title: 'Promo' };
 
-    it('is kept by its id, and its address is only the watch page', () => {
+    it('is kept by its id, played by the cloud page that was given', () => {
       const [yt] = manifestToItems([YT]);
-      expect(yt).toMatchObject({ id: 'y1', type: 'youtube', videoId: VIDEO_ID, title: 'Promo' });
-      expect(yt.url).toBe(`https://www.youtube.com/watch?v=${VIDEO_ID}`);
+      expect(yt).toMatchObject({ id: 'y1', type: 'youtube', videoId: VIDEO_ID, title: 'Promo', url: PLAYER });
     });
 
     it('plays to its end unless the cloud gives a cap, kept at most an hour', () => {
@@ -305,16 +305,27 @@ describe('manifestToItems', () => {
 
     it('is dropped unless the id is exactly eleven letters, digits, - and _', () => {
       const items = manifestToItems([
-        { ...YT, id: 'a', video_id: 'short' },
-        { ...YT, id: 'b', video_id: 'dQw4w9WgXcQ1' },
-        { ...YT, id: 'c', video_id: 'dQw4w9WgX"Q' },
-        { ...YT, id: 'd', video_id: '../../evil.' },
-        { ...YT, id: 'e', video_id: `https://youtu.be/${VIDEO_ID}` },
-        { ...YT, id: 'f', video_id: 123 },
-        { ...YT, id: 'g', video_id: undefined, url: `https://www.youtube.com/watch?v=${VIDEO_ID}` },
-        { ...YT, id: 'h', video_id: 'a-b_c-d_e-f' },
+        ...['short', 'dQw4w9WgXcQ1', 'dQw4w9WgX"Q', '../../evil.', `https://youtu.be/${VIDEO_ID}`, 123, undefined].map(
+          (video_id, i) => ({ ...YT, id: `bad${i}`, video_id, url: `https://cloud.test/player/youtube/?v=${video_id}` })),
+        { ...YT, id: 'good', video_id: 'a-b_c-d_e-f', url: 'https://cloud.test/player/youtube/?v=a-b_c-d_e-f' },
       ]);
-      expect(items.map((i: any) => i.id)).toEqual(['h']);
+      expect(items.map((i: any) => i.id)).toEqual(['good']);
+    });
+
+    it('is dropped unless its address is the cloud page of that very video', () => {
+      const items = manifestToItems([
+        { ...YT, id: 'a', url: undefined },
+        { ...YT, id: 'b', url: `https://www.youtube.com/watch?v=${VIDEO_ID}` },
+        { ...YT, id: 'c', url: `https://www.youtube.com/embed/${VIDEO_ID}` },
+        { ...YT, id: 'd', url: 'https://cloud.test/player/youtube/?v=AAAAAAAAAAA' },
+        { ...YT, id: 'e', url: `https://cloud.test/other/?v=${VIDEO_ID}` },
+        { ...YT, id: 'f', url: `javascript:alert(1)//player/youtube/?v=${VIDEO_ID}` },
+        { ...YT, id: 'g', url: `file:///player/youtube/?v=${VIDEO_ID}` },
+        { ...YT, id: 'h', url: `https://cloud.test/player/youtube/?v=${VIDEO_ID}#x` },
+        { ...YT, id: 'ok1', url: `http://10.0.2.2:8000/player/youtube/?v=${VIDEO_ID}` },
+        { ...YT, id: 'ok2', url: `https://cloud.test/player/youtube/?x=1&v=${VIDEO_ID}&y=2` },
+      ]);
+      expect(items.map((i: any) => i.id)).toEqual(['ok1', 'ok2']);
     });
   });
 

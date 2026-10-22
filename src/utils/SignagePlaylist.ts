@@ -49,6 +49,10 @@ export const WEB_DEFAULT_SECONDS = 30;
 export const WEB_MIN_SECONDS = 5;
 export const WEB_MAX_SECONDS = 3600;
 const YOUTUBE_ID = /^[A-Za-z0-9_-]{11}$/;
+// The page the cloud serves to play a YouTube video: YouTube refuses to play for a page that has no
+// origin (error 153), which is the case of the player page, so the video is played by a page of the
+// cloud that has one and tells the player when it ends. ".../player/youtube/?v=<id>"
+const YOUTUBE_PLAYER = /^https?:\/\/[^\s?#]+\/player\/youtube\/\?(?:[^\s#]*&)?v=([A-Za-z0-9_-]{11})(?:&[^\s#]*)?$/;
 
 export interface PlaylistManifest {
   version: string | null;
@@ -106,8 +110,11 @@ export function manifestToItems(items: ManifestItem[] | undefined | null): Media
     if (kind === 'youtube') {
       const videoId = typeof raw.video_id === 'string' ? raw.video_id.trim() : '';
       if (!YOUTUBE_ID.test(videoId)) continue;
-      // The address is only for the logs: the player builds the embed address from the id
-      item = { id, url: `https://www.youtube.com/watch?v=${videoId}`, type: 'youtube', videoId, isLocal: false };
+      // The address is the cloud's player page for this very video, nothing else
+      const playerUrl = typeof raw.url === 'string' ? raw.url.trim() : '';
+      const match = YOUTUBE_PLAYER.exec(playerUrl);
+      if (!match || match[1] !== videoId) continue;
+      item = { id, url: playerUrl, type: 'youtube', videoId, isLocal: false };
       // Optional: stop the video after so many seconds (it otherwise plays to its end)
       if (seconds !== null) item.duration = Math.min(seconds, WEB_MAX_SECONDS);
     } else {
