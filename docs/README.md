@@ -35,18 +35,12 @@ FreeKiosk is a **free, open-source kiosk platform** for Android tablets. It's de
 - **Multiple Modes** - WebView, External App, Dashboard, Media Player
 - **Rich Automation** - 40+ REST API endpoints + MQTT with Home Assistant auto-discovery
 - **Mass Deployment** - ADB-based headless provisioning
-- **Privacy First** - No tracking, no cloud dependencies
+- **Privacy First** - No tracking; the cloud is optional and off until you enroll a device
 
 ### FreeKiosk vs Fully Kiosk Browser
 
-| Feature | FreeKiosk | Fully Kiosk |
-|---------|:---------:|:-----------:|
-| **Price** | Free | €7.90/device |
-| **Open Source** | MIT | Closed |
-| **Device Owner** | Yes | Yes |
-| **REST API** | 40+ endpoints | Yes |
-| **MQTT + HA Discovery** | Yes | No |
-| **Cloud Management** | Roadmap | Yes |
+A sourced comparison (prices and features quoted from the vendor's own pages, with the date) is on
+the website: [freekiosk.app/vs-fully-kiosk](https://freekiosk.app/vs-fully-kiosk/).
 
 
 ## Quick Start
@@ -90,6 +84,7 @@ adb shell dpm set-device-owner com.freekiosk/.DeviceAdminReceiver
 | **MQTT** | Real-time telemetry and Home Assistant discovery | [Read →](MQTT.md) |
 | **ADB Configuration** | Headless provisioning and scripting | [Read →](adb-configuration.md) |
 | **Android TV** | Android TV, Google TV and Fire TV: what works, setup, limits | [Read →](android-tv.md) |
+| **FreeKiosk Cloud** | Optional fleet management (open beta): what it does, how to enroll, what the tablet sends, pricing | [Read →](cloud.md) |
 | **Digital signage** | Playlists built in FreeKiosk Cloud and played by a screen | [Read →](digital-signage.md) |
 
 ### Advanced Topics
