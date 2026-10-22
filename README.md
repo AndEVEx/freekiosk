@@ -55,7 +55,7 @@ Instead of burying everything in one long page, this README gives you the essent
 | Device control | Lock task, boot behavior, status bar policies, PIN access | [Installation](docs/installation.md) |
 | Automation | 40+ REST endpoints, MQTT discovery for Home Assistant | [Integrations](docs/INTEGRATIONS.md) |
 | Provisioning | ADB command-based configuration and scripting | [ADB Configuration](docs/adb-configuration.md) |
-| Fleet management | Optional FreeKiosk Cloud (open beta): remote config, commands, screenshots, QR enrollment | See [FreeKiosk Cloud](#-freekiosk-cloud-open-beta) below |
+| Fleet management | Optional FreeKiosk Cloud (open beta): remote config, commands, groups, alerts, QR enrollment | See [FreeKiosk Cloud](#-freekiosk-cloud-open-beta) below |
 
 ## 📦 Install in 60 seconds
 
@@ -89,7 +89,7 @@ adb shell dpm set-device-owner com.freekiosk/.DeviceAdminReceiver
 
 **FreeKiosk Cloud** is a companion service that manages a fleet from a web dashboard: live status, configuration pushed to devices or groups, remote commands and screenshots. A tablet can be enrolled by scanning a QR code, and a factory-reset tablet can be provisioned end to end from the Android setup wizard.
 
-**The cloud is in open beta, with self-service sign-up** at [cloud.freekiosk.app](https://cloud.freekiosk.app): the first device is free, then it is priced per device (see [freekiosk.app/cloud](https://freekiosk.app/cloud)). The app itself, `v2.0.0`, is stable. Some cloud paths (over-the-air app updates, QR provisioning, Lock Mode behaviour on every model) have not been proven across enough real hardware for us to call the cloud finished.
+**The cloud is in open beta, with self-service sign-up** at [cloud.freekiosk.app](https://cloud.freekiosk.app): the first device is free, then it is priced per device (see [freekiosk.app/cloud](https://freekiosk.app/cloud)). The free device has the whole service except APK distribution, remote screenshots, the scheduler, renaming the organization and additional team members, which come with the first paid licence. The app itself, `v2.0.0`, is stable. Some cloud paths (over-the-air app updates, QR provisioning, Lock Mode behaviour on every model) have not been proven across enough real hardware for us to call the cloud finished.
 
 **The app itself is unaffected.** FreeKiosk stays free and MIT licensed, and the cloud is entirely opt-in: nothing leaves the device until you enroll it. Every kiosk feature, the REST API and the MQTT integration work exactly as before without a cloud account, and always will.
 
