@@ -1,7 +1,7 @@
 <div align="center">
   <h1>FreeKiosk</h1>
   <p><strong>Free open-source kiosk mode for Android tablets</strong></p>
-  <p>Alternative to Fully Kiosk Browser</p>
+  <p>Alternative to Fully Kiosk Browser (<a href="https://freekiosk.app/vs-fully-kiosk/">see how they compare</a>)</p>
   
   <p>
     <a href="https://freekiosk.app">Website</a> •
