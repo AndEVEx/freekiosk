@@ -1521,8 +1521,10 @@ class KioskModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
 
     /**
      * Schedule a native alarm to wake the screen at a specific time.
-     * Uses AlarmManager.setAndAllowWhileIdle() to fire reliably even in Doze mode.
-     * Uses inexact alarm (no SCHEDULE_EXACT_ALARM permission needed for Play Store).
+     * Uses AlarmManager.setAlarmClock() (#307): exact, allowed in Doze, and it needs no
+     * SCHEDULE_EXACT_ALARM permission. An inexact alarm (setAndAllowWhileIdle) may be delivered
+     * anywhere in a window of 75% of the time left, up to an hour, so a wake set in the evening
+     * for 07:00 could fire as late as 08:00. The system lists it as the next alarm.
      * This is critical because JS timers are suspended when the screen is off via lockNow().
      *
      * @param wakeTimeMs Unix timestamp in milliseconds for the wake time
@@ -1543,10 +1545,15 @@ class KioskModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
                 android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
             )
 
-            // setAndAllowWhileIdle works in Doze mode without SCHEDULE_EXACT_ALARM permission
-            alarmManager.setAndAllowWhileIdle(
-                android.app.AlarmManager.RTC_WAKEUP,
-                wakeTimeMs.toLong(),
+            // The "show" intent is what the system opens when the alarm is tapped in its UI
+            val showIntent = android.app.PendingIntent.getActivity(
+                context,
+                1003, // unique request code for the alarm-clock "show" intent
+                Intent(context, MainActivity::class.java),
+                android.app.PendingIntent.FLAG_IMMUTABLE
+            )
+            alarmManager.setAlarmClock(
+                android.app.AlarmManager.AlarmClockInfo(wakeTimeMs.toLong(), showIntent),
                 pendingIntent
             )
 
