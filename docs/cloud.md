@@ -16,8 +16,10 @@ work without an account, and nothing leaves the device until you enroll it.
 - **Groups and configuration profiles**: apply the same settings to many devices.
 - **Alerts and notifications** when a device changes state.
 - **Remote screenshots** and **APK distribution** (paid licence, see [Pricing](#pricing-and-billing)).
-- **Digital signage**: playlists played by a screen, see [Digital signage](digital-signage.md)
-  (next release).
+- **Digital signage** (beta): playlists of videos, images, web pages and YouTube videos played by a
+  screen, with schedules, see [Digital signage](digital-signage.md). It needs the app `2.1.0-beta.1`
+  or later, available as a [GitHub pre-release](https://github.com/RushB-fr/freekiosk/releases)
+  (Google Play still has `2.0.0`).
 
 ## Enroll a device
 

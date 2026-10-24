@@ -56,6 +56,7 @@ Instead of burying everything in one long page, this README gives you the essent
 | Automation | 40+ REST endpoints, MQTT discovery for Home Assistant | [Integrations](docs/INTEGRATIONS.md) |
 | Provisioning | ADB command-based configuration and scripting | [ADB Configuration](docs/adb-configuration.md) |
 | Fleet management | Optional FreeKiosk Cloud (open beta): remote config, commands, groups, alerts, QR enrollment | See [FreeKiosk Cloud](#-freekiosk-cloud-open-beta) below |
+| Digital signage (beta) | Playlists of videos, images, web pages and YouTube videos built in the cloud, with schedules and offline playback; Android TV, Google TV and Fire TV | [Digital signage](docs/digital-signage.md), [Android TV](docs/android-tv.md) |
 
 ## 📦 Install in 60 seconds
 
@@ -91,6 +92,8 @@ adb shell dpm set-device-owner com.freekiosk/.DeviceAdminReceiver
 **FreeKiosk Cloud** is a companion service that manages a fleet from a web dashboard: live status, configuration pushed to devices or groups, remote commands and screenshots. A tablet can be enrolled by scanning a QR code, and a factory-reset tablet can be provisioned end to end from the Android setup wizard.
 
 **The cloud is in open beta, with self-service sign-up** at [cloud.freekiosk.app](https://cloud.freekiosk.app): the first device is free, then it is priced per device (see [freekiosk.app/cloud](https://freekiosk.app/cloud) and the [cloud guide](docs/cloud.md)). The free device has the whole service except APK distribution, remote screenshots, the scheduler, renaming the organization and additional team members, which come with the first paid licence. The app itself, `v2.0.0`, is stable. Some cloud paths (over-the-air app updates, QR provisioning, Lock Mode behaviour on every model) have not been proven across enough real hardware for us to call the cloud finished.
+
+**Digital signage is in beta** on both sides: build a playlist of videos, images, web pages and YouTube videos in the dashboard and a screen plays it, with schedules and from an offline cache (web pages and YouTube need the network). It needs the app `v2.1.0-beta.1`, a [GitHub pre-release](https://github.com/RushB-fr/freekiosk/releases) (Google Play still has `2.0.0`), and also runs on Android TV, Google TV and Fire TV, **tested on emulators only so far**. Details and limits: [Digital signage](docs/digital-signage.md).
 
 **The app itself is unaffected.** FreeKiosk stays free and MIT licensed, and the cloud is entirely opt-in: nothing leaves the device until you enroll it. Every kiosk feature, the REST API and the MQTT integration work exactly as before without a cloud account, and always will.
 
