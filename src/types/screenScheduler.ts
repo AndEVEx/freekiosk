@@ -3,24 +3,43 @@
  * Allows defining automatic screen-off/on times to save energy
  */
 
+export interface DaySchedule {
+  day: number;          // 0=Minggu/Sun, 1=Senin/Mon, ..., 6=Sabtu/Sat
+  name: string;         // e.g. "Senin", "Selasa", etc.
+  enabled: boolean;     // true = Tablet aktif/nyala hari ini, false = Libur/mati seharian
+  onTime: string;       // "HH:MM" — Jam Layar Nyala (contoh: "06:30")
+  offTime: string;      // "HH:MM" — Jam Layar Mati (contoh: "16:00")
+}
+
+export const DEFAULT_DAY_SCHEDULES: DaySchedule[] = [
+  { day: 1, name: 'Senin', enabled: true, onTime: '06:30', offTime: '16:00' },
+  { day: 2, name: 'Selasa', enabled: true, onTime: '06:30', offTime: '16:00' },
+  { day: 3, name: 'Rabu', enabled: true, onTime: '06:30', offTime: '16:00' },
+  { day: 4, name: 'Kamis', enabled: true, onTime: '06:30', offTime: '16:00' },
+  { day: 5, name: 'Jumat', enabled: true, onTime: '06:30', offTime: '15:30' },
+  { day: 6, name: 'Sabtu', enabled: false, onTime: '06:30', offTime: '13:00' },
+  { day: 0, name: 'Minggu', enabled: false, onTime: '06:30', offTime: '16:00' },
+];
+
 export interface ScreenScheduleRule {
   id: string;
   name: string;                  // e.g., "Night (weekdays)", "Weekend"
   enabled: boolean;
   days: number[];                // [0=Sun, 1=Mon, ..., 6=Sat]
-  sleepTime: string;             // "HH:MM" — screen off time
-  wakeTime: string;              // "HH:MM" — screen on time
+  sleepTime: string;             // "HH:MM" - screen off time
+  wakeTime: string;              // "HH:MM" - screen on time
 }
 
 export interface ScreenSchedulerConfig {
   enabled: boolean;
   rules: ScreenScheduleRule[];
+  dailySchedules?: DaySchedule[];
   wakeOnTouch: boolean;          // Allow waking screen by touching during sleep window
 }
 
 // Day names for UI
-export const DAY_NAMES_SHORT = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
-export const DAY_NAMES_FULL = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+export const DAY_NAMES_SHORT = ['M', 'S', 'S', 'R', 'K', 'J', 'S'];
+export const DAY_NAMES_FULL = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
 
 /**
  * Generate unique rule ID
@@ -46,10 +65,101 @@ export const getCurrentTimeString = (now?: Date): string => {
 };
 
 /**
+ * Parse "HH:MM" into { hours, minutes }
+ */
+export const parseTime = (time: string): { hours: number; minutes: number } => {
+  const [h, m] = time.split(':').map(Number);
+  return { hours: h, minutes: m };
+};
+
+/**
+ * Check if the tablet screen should be ON right now according to the daily schedule.
+ * Returns true if the screen should be ON (active).
+ * Returns false if the screen should be OFF (sleeping / outside active hours / holiday).
+ */
+export const shouldScreenBeOnDailySchedule = (schedules: DaySchedule[], now?: Date): boolean => {
+  if (!schedules || schedules.length === 0) return true;
+
+  const d = now || new Date();
+  const currentDay = d.getDay(); // 0=Sun/Minggu, 1=Mon/Senin, ..., 6=Sat/Sabtu
+  const currentTime = getCurrentTimeString(d);
+
+  const dayConfig = schedules.find(s => s.day === currentDay);
+  if (!dayConfig || !dayConfig.enabled) {
+    // Hari libur / tidak aktif -> layar MATI
+    return false;
+  }
+
+  const { onTime, offTime } = dayConfig;
+  if (!isValidTime(onTime) || !isValidTime(offTime)) return true;
+  if (onTime === offTime) return false;
+
+  if (onTime < offTime) {
+    // Jam aktif normal dalam 1 hari (contoh 06:30 s/d 16:00)
+    return currentTime >= onTime && currentTime < offTime;
+  } else {
+    // Shift malam melewati tengah malam (contoh 20:00 s/d 04:00)
+    return currentTime >= onTime || currentTime < offTime;
+  }
+};
+
+/**
+ * Compute the next time the screen should turn ON (Wake) based on daily schedule.
+ */
+export const getNextDailyWakeTime = (schedules: DaySchedule[], now?: Date): Date | null => {
+  if (!schedules || schedules.length === 0) return null;
+
+  const d = now || new Date();
+
+  for (let offset = 0; offset <= 7; offset++) {
+    const candidate = new Date(d);
+    candidate.setDate(candidate.getDate() + offset);
+    const candidateDay = candidate.getDay();
+    const dayConfig = schedules.find(s => s.day === candidateDay);
+
+    if (dayConfig && dayConfig.enabled && isValidTime(dayConfig.onTime)) {
+      const { hours, minutes } = parseTime(dayConfig.onTime);
+      candidate.setHours(hours, minutes, 0, 0);
+
+      if (candidate > d) {
+        return candidate;
+      }
+    }
+  }
+
+  return null;
+};
+
+/**
+ * Compute the next time the screen should turn OFF (Sleep) based on daily schedule.
+ */
+export const getNextDailySleepTime = (schedules: DaySchedule[], now?: Date): Date | null => {
+  if (!schedules || schedules.length === 0) return null;
+
+  const d = now || new Date();
+
+  for (let offset = 0; offset <= 7; offset++) {
+    const candidate = new Date(d);
+    candidate.setDate(candidate.getDate() + offset);
+    const candidateDay = candidate.getDay();
+    const dayConfig = schedules.find(s => s.day === candidateDay);
+
+    if (dayConfig && dayConfig.enabled && isValidTime(dayConfig.offTime)) {
+      const { hours, minutes } = parseTime(dayConfig.offTime);
+      candidate.setHours(hours, minutes, 0, 0);
+
+      if (candidate > d) {
+        return candidate;
+      }
+    }
+  }
+
+  return null;
+};
+
+/**
  * Check if the current time falls within a sleep window for a given rule.
- * Handles the midnight-crossing case (e.g., sleepTime=22:00, wakeTime=07:00).
- * 
- * Returns true if the screen should be OFF (sleeping).
+ * Legacy support.
  */
 export const isRuleActiveNow = (rule: ScreenScheduleRule, now?: Date): boolean => {
   if (!rule.enabled) return false;
@@ -61,39 +171,25 @@ export const isRuleActiveNow = (rule: ScreenScheduleRule, now?: Date): boolean =
   const { sleepTime, wakeTime, days } = rule;
 
   if (!isValidTime(sleepTime) || !isValidTime(wakeTime)) return false;
-  if (sleepTime === wakeTime) return false; // Same time = no window
+  if (sleepTime === wakeTime) return false;
 
   if (sleepTime < wakeTime) {
-    // Same-day window (e.g., 01:00 → 06:00)
-    // Sleep window is within a single day
     if (!days.includes(currentDay)) return false;
     return currentTime >= sleepTime && currentTime < wakeTime;
   } else {
-    // Midnight-crossing window (e.g., 22:00 → 07:00)
-    // Two cases:
-    //   1. After sleepTime on a scheduled day (22:00–23:59)
-    //   2. Before wakeTime on the day AFTER a scheduled day (00:00–06:59)
-    
-    // Case 1: We are in the evening portion (after sleepTime)
     if (currentTime >= sleepTime) {
-      // Check if today is a scheduled day
       return days.includes(currentDay);
     }
-    
-    // Case 2: We are in the morning portion (before wakeTime)
     if (currentTime < wakeTime) {
-      // Check if YESTERDAY was a scheduled day
-      const yesterday = (currentDay + 6) % 7; // (currentDay - 1 + 7) % 7
+      const yesterday = (currentDay + 6) % 7;
       return days.includes(yesterday);
     }
-    
     return false;
   }
 };
 
 /**
  * Check if the screen should be sleeping based on all enabled rules.
- * Returns the first matching active rule, or null if screen should be ON.
  */
 export const getActiveSleepRule = (rules: ScreenScheduleRule[], now?: Date): ScreenScheduleRule | null => {
   for (const rule of rules) {
@@ -104,21 +200,15 @@ export const getActiveSleepRule = (rules: ScreenScheduleRule[], now?: Date): Scr
   return null;
 };
 
-/**
- * Check if screen should be sleeping (convenience function)
- */
 export const isInSleepWindow = (rules: ScreenScheduleRule[], now?: Date): boolean => {
   return getActiveSleepRule(rules, now) !== null;
 };
 
-/**
- * Get days display string for a rule
- */
 export const getDaysDisplayString = (days: number[]): string => {
   if (days.length === 0) return 'No days';
-  if (days.length === 7) return 'Every day';
-  if (days.length === 5 && !days.includes(0) && !days.includes(6)) return 'Weekdays';
-  if (days.length === 2 && days.includes(0) && days.includes(6)) return 'Weekends';
+  if (days.length === 7) return 'Setiap Hari';
+  if (days.length === 5 && !days.includes(0) && !days.includes(6)) return 'Senin - Jumat';
+  if (days.length === 2 && days.includes(0) && days.includes(6)) return 'Akhir Pekan (Sabtu - Minggu)';
 
   return days
     .sort((a, b) => a - b)
@@ -126,31 +216,15 @@ export const getDaysDisplayString = (days: number[]): string => {
     .join(', ');
 };
 
-/**
- * Create a default new rule
- */
 export const createDefaultRule = (name?: string): ScreenScheduleRule => ({
   id: generateRuleId(),
-  name: name || 'Night',
+  name: name || 'Jadwal Malam',
   enabled: true,
-  days: [1, 2, 3, 4, 5], // Weekdays by default
-  sleepTime: '22:00',
-  wakeTime: '07:00',
+  days: [1, 2, 3, 4, 5],
+  sleepTime: '16:00',
+  wakeTime: '06:30',
 });
 
-/**
- * Parse "HH:MM" into { hours, minutes }
- */
-const parseTime = (time: string): { hours: number; minutes: number } => {
-  const [h, m] = time.split(':').map(Number);
-  return { hours: h, minutes: m };
-};
-
-/**
- * Compute the next occurrence of the wake time based on the active sleep rule.
- * When we enter sleep, we need to know WHEN to wake up.
- * Returns a Date object for the next wake-up moment.
- */
 export const getNextWakeTime = (rule: ScreenScheduleRule, now?: Date): Date | null => {
   if (!rule.enabled || !isValidTime(rule.wakeTime)) return null;
   
@@ -159,22 +233,17 @@ export const getNextWakeTime = (rule: ScreenScheduleRule, now?: Date): Date | nu
   const currentTime = getCurrentTimeString(d);
 
   if (rule.sleepTime < rule.wakeTime) {
-    // Same-day window (e.g., 01:00 → 06:00) — wake is today
     const wakeDate = new Date(d);
     wakeDate.setHours(hours, minutes, 0, 0);
     if (wakeDate > d) return wakeDate;
-    // Already past wake time today — next scheduled day
     return getNextTimeOnScheduledDay(rule.wakeTime, rule.days, d, 1);
   } else {
-    // Midnight-crossing (e.g., 22:00 → 07:00)
     if (currentTime >= rule.sleepTime) {
-      // We're in the evening portion — wake is tomorrow morning
       const wakeDate = new Date(d);
       wakeDate.setDate(wakeDate.getDate() + 1);
       wakeDate.setHours(hours, minutes, 0, 0);
       return wakeDate;
     } else if (currentTime < rule.wakeTime) {
-      // We're in the morning portion — wake is today
       const wakeDate = new Date(d);
       wakeDate.setHours(hours, minutes, 0, 0);
       return wakeDate;
@@ -184,11 +253,6 @@ export const getNextWakeTime = (rule: ScreenScheduleRule, now?: Date): Date | nu
   return null;
 };
 
-/**
- * Compute the next occurrence of the sleep time across all rules.
- * Used to schedule the next sleep alarm after a wake.
- * Returns { date, rule } for the next sleep moment.
- */
 export const getNextSleepTime = (rules: ScreenScheduleRule[], now?: Date): { date: Date; rule: ScreenScheduleRule } | null => {
   const d = now || new Date();
   let earliest: { date: Date; rule: ScreenScheduleRule } | null = null;
@@ -205,13 +269,6 @@ export const getNextSleepTime = (rules: ScreenScheduleRule[], now?: Date): { dat
   return earliest;
 };
 
-/**
- * Find the next occurrence of a given "HH:MM" time on one of the scheduled days.
- * @param time "HH:MM" target
- * @param days array of day indices (0=Sun..6=Sat)
- * @param from reference date
- * @param startOffset how many days from 'from' to start checking (0 = today, 1 = tomorrow)
- */
 const getNextTimeOnScheduledDay = (time: string, days: number[], from: Date, startOffset: number): Date | null => {
   const { hours, minutes } = parseTime(time);
   
@@ -220,7 +277,7 @@ const getNextTimeOnScheduledDay = (time: string, days: number[], from: Date, sta
     candidate.setDate(candidate.getDate() + offset);
     candidate.setHours(hours, minutes, 0, 0);
     
-    if (candidate <= from) continue; // Must be in the future
+    if (candidate <= from) continue;
     if (days.includes(candidate.getDay())) {
       return candidate;
     }

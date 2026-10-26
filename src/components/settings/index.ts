@@ -28,3 +28,4 @@ export { default as OneTimeEventEditor } from './OneTimeEventEditor';
 // Screen Schedule components
 export { default as ScreenScheduleRuleCard } from './ScreenScheduleRuleCard';
 export { default as ScreenScheduleRuleEditor } from './ScreenScheduleRuleEditor';
+export { default as DailyScheduleEditor } from './DailyScheduleEditor';

@@ -17,7 +17,8 @@ import {
 import ScreenScheduleRuleCard from '../../../components/settings/ScreenScheduleRuleCard';
 import ProximityDetectionModule from '../../../utils/ProximityDetectionModule';
 import { Colors, Spacing, Typography } from '../../../theme';
-import { ScreenScheduleRule } from '../../../types/screenScheduler';
+import { ScreenScheduleRule, DaySchedule } from '../../../types/screenScheduler';
+import DailyScheduleEditor from '../../../components/settings/DailyScheduleEditor';
 import type { MediaItem } from '../../../types/mediaPlayer';
 import { getMediaDisplayName } from '../../../types/mediaPlayer';
 import { useTranslation } from 'react-i18next';
@@ -131,6 +132,8 @@ interface DisplayTabProps {
   onScreenSchedulerRulesChange: (rules: ScreenScheduleRule[]) => void;
   screenSchedulerWakeOnTouch: boolean;
   onScreenSchedulerWakeOnTouchChange: (value: boolean) => void;
+  dailySchedules?: DaySchedule[];
+  onDailySchedulesChange?: (schedules: DaySchedule[]) => void;
   onAddScheduleRule: () => void;
   onEditScheduleRule: (rule: ScreenScheduleRule) => void;
   
@@ -225,6 +228,8 @@ const DisplayTab: React.FC<DisplayTabProps> = ({
   screenSchedulerRules,
   onScreenSchedulerRulesChange,
   screenSchedulerWakeOnTouch,
+  dailySchedules = [],
+  onDailySchedulesChange = () => {},
   onScreenSchedulerWakeOnTouchChange,
   keepScreenOn,
   onKeepScreenOnChange,
@@ -733,6 +738,18 @@ const DisplayTab: React.FC<DisplayTabProps> = ({
 
         {screenSchedulerEnabled && (
           <>
+            {/* Daily Tablet Schedule (Senin - Minggu) */}
+            <View style={styles.subSection}>
+              <Text style={styles.subSectionTitle}>Jadwal Harian Tablet Nyala / Mati</Text>
+              <Text style={styles.infoText}>
+                Tentukan jam tablet aktif (layar nyala) untuk setiap hari (Senin - Minggu). Di luar jam tersebut atau pada hari libur, layar tablet akan otomatis mati (sleep).
+              </Text>
+              <DailyScheduleEditor
+                schedules={dailySchedules}
+                onChange={onDailySchedulesChange}
+              />
+            </View>
+
             {/* Schedule Rules List */}
             <View style={styles.subSection}>
               <Text style={styles.subSectionTitle}>{t('display.screenSchedule.rulesTitle')}</Text>
@@ -1053,6 +1070,11 @@ const DisplayTab: React.FC<DisplayTabProps> = ({
           <SettingsRadioGroup
             hint={t('display.keyboard.hint')}
             options={[
+              {
+                value: 'none',
+                label: 'Matikan Keyboard Virtual (Scanner RFID / Barcode)',
+                hint: 'Mencegah keyboard on-screen muncul saat input fokus. Sangat cocok untuk Barcode & RFID Scanner.',
+              },
               {
                 value: 'default',
                 label: t('display.keyboard.default'),

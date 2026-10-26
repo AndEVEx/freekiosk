@@ -123,6 +123,32 @@ class ScreenSchedulerReceiver : BroadcastReceiver() {
     private fun handleSleep(context: Context) {
         Log.d(TAG, "⏰ Scheduled SLEEP alarm fired — turning screen OFF")
         try {
+            // Dismiss soft keyboard if open
+            try {
+                val reactApp = context.applicationContext
+                if (reactApp is com.facebook.react.ReactApplication) {
+                    val activity = reactApp.reactNativeHost.reactInstanceManager?.currentReactContext?.currentActivity
+                    if (activity != null) {
+                        KeyboardUtils.dismiss(activity)
+                    }
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Could not dismiss keyboard: ${e.message}")
+            }
+
+            // Immediately turn screen off natively if Device Owner / Admin is active
+            try {
+                val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as? android.app.admin.DevicePolicyManager
+                val adminComponent = android.content.ComponentName(context, DeviceAdminReceiver::class.java)
+                if (dpm != null && (dpm.isDeviceOwnerApp(context.packageName) || dpm.isAdminActive(adminComponent))) {
+                    ScreenStateReceiver.markDeliberateScreenOff(context)
+                    dpm.lockNow()
+                    Log.d(TAG, "Screen turned OFF via lockNow() in receiver")
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Could not lock screen directly: ${e.message}")
+            }
+
             // Send event to JS so the app can handle the sleep properly
             KioskModule.sendEventFromNative("onScheduledSleep", null)
 

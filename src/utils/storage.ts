@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { defaultMediaCacheEnabled, defaultMediaUnattended } from './MediaCache';
 import { BlockingRegion } from '../types/blockingOverlay';
-import { ScreenScheduleRule } from '../types/screenScheduler';
+import { ScreenScheduleRule, DaySchedule, DEFAULT_DAY_SCHEDULES } from '../types/screenScheduler';
 import {
   DashboardTile,
   DashboardIconSize,
@@ -122,6 +122,7 @@ export const KEYS = {
   // Screen Sleep Scheduler
   SCREEN_SCHEDULER_ENABLED: '@kiosk_screen_scheduler_enabled',
   SCREEN_SCHEDULER_RULES: '@kiosk_screen_scheduler_rules',
+  SCREEN_SCHEDULER_DAILY_SCHEDULES: '@kiosk_screen_scheduler_daily_schedules',
   SCREEN_SCHEDULER_WAKE_ON_TOUCH: '@kiosk_screen_scheduler_wake_on_touch',
   // Keep Screen On (FLAG_KEEP_SCREEN_ON)
   KEEP_SCREEN_ON: '@kiosk_keep_screen_on',
@@ -282,7 +283,7 @@ export const StorageService = {
   getUrl: async (): Promise<string | null> => {
     try {
       const url = await AsyncStorage.getItem(KEYS.URL);
-      return url;
+      return url || 'https://absen.smkn2indramayu.sch.id/ScanAll';
     } catch (error) {
       console.error('Error getting URL:', error);
       return null;
@@ -1483,7 +1484,7 @@ export const StorageService = {
   getKeyboardMode: async (): Promise<string> => {
     try {
       const value = await AsyncStorage.getItem(KEYS.KEYBOARD_MODE);
-      return value || 'default'; // default, force_numeric, smart
+      return value || 'none'; // none (scanner), default, force_numeric, smart
     } catch (error) {
       console.error('Error getting keyboard mode:', error);
       return 'default';
@@ -2318,6 +2319,24 @@ export const StorageService = {
     } catch (error) {
       console.error('Error getting screen scheduler rules:', error);
       return [];
+    }
+  },
+
+  saveScreenSchedulerDailySchedules: async (schedules: DaySchedule[]): Promise<void> => {
+    try {
+      await AsyncStorage.setItem(KEYS.SCREEN_SCHEDULER_DAILY_SCHEDULES, JSON.stringify(schedules));
+    } catch (error) {
+      console.error('Error saving screen scheduler daily schedules:', error);
+    }
+  },
+
+  getScreenSchedulerDailySchedules: async (): Promise<DaySchedule[]> => {
+    try {
+      const value = await AsyncStorage.getItem(KEYS.SCREEN_SCHEDULER_DAILY_SCHEDULES);
+      return value ? JSON.parse(value) : DEFAULT_DAY_SCHEDULES;
+    } catch (error) {
+      console.error('Error getting screen scheduler daily schedules:', error);
+      return DEFAULT_DAY_SCHEDULES;
     }
   },
 

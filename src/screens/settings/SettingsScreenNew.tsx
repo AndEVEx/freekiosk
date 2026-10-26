@@ -51,7 +51,7 @@ import {
 import { RecurringEventEditor, OneTimeEventEditor, CloudPromoBanner } from '../../components/settings';
 import ScreenScheduleRuleEditor from '../../components/settings/ScreenScheduleRuleEditor';
 import { ScheduledEvent } from '../../types/planner';
-import { ScreenScheduleRule } from '../../types/screenScheduler';
+import { ScreenScheduleRule, DaySchedule, DEFAULT_DAY_SCHEDULES } from '../../types/screenScheduler';
 import { ManagedApp } from '../../types/managedApps';
 import { MediaItem, MediaFitMode, generateMediaItemId, detectMediaType } from '../../types/mediaPlayer';
 import FilePickerModule from '../../utils/FilePickerModule';
@@ -86,7 +86,7 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation, route })
   });
   
   // All state from original SettingsScreen
-  const [url, setUrl] = useState<string>('');
+  const [url, setUrl] = useState<string>('https://absen.smkn2indramayu.sch.id/ScanAll');
   const [pin, setPin] = useState<string>('');
   const [isPinConfigured, setIsPinConfigured] = useState<boolean>(false);
   const [pinMode, setPinMode] = useState<'numeric' | 'alphanumeric'>('numeric');
@@ -191,6 +191,7 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation, route })
   // Screen Sleep Scheduler states
   const [screenSchedulerEnabled, setScreenSchedulerEnabled] = useState<boolean>(false);
   const [screenSchedulerRules, setScreenSchedulerRules] = useState<ScreenScheduleRule[]>([]);
+  const [dailySchedules, setDailySchedules] = useState<DaySchedule[]>(DEFAULT_DAY_SCHEDULES);
   const [screenSchedulerWakeOnTouch, setScreenSchedulerWakeOnTouch] = useState<boolean>(true);
   const [keepScreenOn, setKeepScreenOn] = useState<boolean>(true);
   const [autoWakeOnScreenOff, setAutoWakeOnScreenOff] = useState<boolean>(false);
@@ -628,6 +629,7 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation, route })
     // Screen Sleep Scheduler settings
     const savedScreenSchedulerEnabled = await StorageService.getScreenSchedulerEnabled();
     const savedScreenSchedulerRules = await StorageService.getScreenSchedulerRules();
+    const savedDailySchedules = await StorageService.getScreenSchedulerDailySchedules();
     const savedScreenSchedulerWakeOnTouch = await StorageService.getScreenSchedulerWakeOnTouch();
     const savedKeepScreenOn = await StorageService.getKeepScreenOn();
 
@@ -692,6 +694,7 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation, route })
     setBrightnessManagementEnabled(savedBrightnessManagementEnabled);
     setScreenSchedulerEnabled(savedScreenSchedulerEnabled);
     setScreenSchedulerRules(savedScreenSchedulerRules);
+    setDailySchedules(savedDailySchedules);
     setScreenSchedulerWakeOnTouch(savedScreenSchedulerWakeOnTouch);
     setKeepScreenOn(savedKeepScreenOn);
 
@@ -1542,6 +1545,7 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation, route })
     // Screen Sleep Scheduler settings (applies to ALL modes)
     await StorageService.saveScreenSchedulerEnabled(screenSchedulerEnabled);
     await StorageService.saveScreenSchedulerRules(screenSchedulerRules);
+    await StorageService.saveScreenSchedulerDailySchedules(dailySchedules);
     await StorageService.saveScreenSchedulerWakeOnTouch(screenSchedulerWakeOnTouch);
 
     // Screensaver settings apply to all display modes (external_app now supports screensaver)
@@ -2250,6 +2254,8 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation, route })
             screenSchedulerEnabled={screenSchedulerEnabled}
             onScreenSchedulerEnabledChange={setScreenSchedulerEnabled}
             screenSchedulerRules={screenSchedulerRules}
+            dailySchedules={dailySchedules}
+            onDailySchedulesChange={setDailySchedules}
             onScreenSchedulerRulesChange={setScreenSchedulerRules}
             screenSchedulerWakeOnTouch={screenSchedulerWakeOnTouch}
             onScreenSchedulerWakeOnTouchChange={setScreenSchedulerWakeOnTouch}

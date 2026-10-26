@@ -825,6 +825,34 @@ const WebViewComponent = forwardRef<WebViewComponentRef, WebViewComponentProps>(
 
   // Script d'injection pour forcer le clavier numérique
   const getKeyboardModeScript = (): string => {
+    if (keyboardMode === 'none' || keyboardMode === 'hide' || keyboardMode === 'scanner') {
+      return `
+        (function() {
+          function suppressSoftKeyboard() {
+            try {
+              var inputs = document.querySelectorAll('input, textarea, [contenteditable]');
+              inputs.forEach(function(el) {
+                el.setAttribute('inputmode', 'none');
+              });
+            } catch (e) {}
+          }
+          suppressSoftKeyboard();
+          if (document.body) {
+            new MutationObserver(suppressSoftKeyboard).observe(document.body, { childList: true, subtree: true });
+          } else {
+            document.addEventListener('DOMContentLoaded', function() {
+              suppressSoftKeyboard();
+              new MutationObserver(suppressSoftKeyboard).observe(document.body, { childList: true, subtree: true });
+            });
+          }
+          document.addEventListener('focusin', function(e) {
+            if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable)) {
+              e.target.setAttribute('inputmode', 'none');
+            }
+          }, true);
+        })();
+      `;
+    }
     if (keyboardMode === 'default') {
       return '';
     }

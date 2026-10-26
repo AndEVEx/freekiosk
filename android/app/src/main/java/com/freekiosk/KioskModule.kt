@@ -1591,12 +1591,26 @@ class KioskModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
                 android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
             )
 
-            // setAndAllowWhileIdle works in Doze mode without SCHEDULE_EXACT_ALARM permission
-            alarmManager.setAndAllowWhileIdle(
-                android.app.AlarmManager.RTC_WAKEUP,
-                sleepTimeMs.toLong(),
-                pendingIntent
+            val showIntent = android.app.PendingIntent.getActivity(
+                context,
+                1004,
+                Intent(context, MainActivity::class.java),
+                android.app.PendingIntent.FLAG_IMMUTABLE
             )
+
+            // Use setAlarmClock for EXACT sleep timing (never delayed by Doze)
+            try {
+                alarmManager.setAlarmClock(
+                    android.app.AlarmManager.AlarmClockInfo(sleepTimeMs.toLong(), showIntent),
+                    pendingIntent
+                )
+            } catch (e: Exception) {
+                alarmManager.setAndAllowWhileIdle(
+                    android.app.AlarmManager.RTC_WAKEUP,
+                    sleepTimeMs.toLong(),
+                    pendingIntent
+                )
+            }
 
             val calendar = java.util.Calendar.getInstance().apply { timeInMillis = sleepTimeMs.toLong() }
             val timeStr = String.format("%02d:%02d:%02d",

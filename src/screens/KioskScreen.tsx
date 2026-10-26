@@ -31,7 +31,7 @@ import {
 } from '../types/dashboard';
 import DashboardGrid from '../components/DashboardGrid';
 import type { MediaItem, MediaFitMode } from '../types/mediaPlayer';
-import { ScreenScheduleRule, getNextWakeTime, getActiveSleepRule, getNextSleepTime } from '../types/screenScheduler';
+import { ScreenScheduleRule, getNextWakeTime, getActiveSleepRule, getNextSleepTime, DaySchedule, DEFAULT_DAY_SCHEDULES, shouldScreenBeOnDailySchedule, getNextDailyWakeTime, getNextDailySleepTime } from '../types/screenScheduler';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/AppNavigator';
 import Icon from '../components/Icon';
@@ -171,6 +171,7 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
   // Screen Sleep Scheduler states
   const [screenSchedulerEnabled, setScreenSchedulerEnabled] = useState<boolean>(false);
   const [screenSchedulerRules, setScreenSchedulerRules] = useState<ScreenScheduleRule[]>([]);
+  const [screenSchedulerDailySchedules, setScreenSchedulerDailySchedules] = useState<DaySchedule[]>(DEFAULT_DAY_SCHEDULES);
   const [screenSchedulerWakeOnTouch, setScreenSchedulerWakeOnTouch] = useState<boolean>(true);
   const [isScheduledSleep, setIsScheduledSleep] = useState<boolean>(false); // true when screen is OFF due to scheduler
   const screenSchedulerTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -1461,36 +1462,50 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
   // so setInterval can't reliably fire for wake-up.
 
   // Helper: schedule the next native alarm for wake-up
-  const scheduleNativeWakeAlarm = useCallback(async (activeRule: ScreenScheduleRule) => {
-    const wakeDate = getNextWakeTime(activeRule, new Date());
+  // Helper: schedule the next native alarm for wake-up
+  const scheduleNativeWakeAlarm = useCallback(async (activeRule?: ScreenScheduleRule) => {
+    let wakeDate: Date | null = null;
+    if (screenSchedulerDailySchedules && screenSchedulerDailySchedules.length > 0) {
+      wakeDate = getNextDailyWakeTime(screenSchedulerDailySchedules, new Date());
+    } else if (activeRule) {
+      wakeDate = getNextWakeTime(activeRule, new Date());
+    } else if (screenSchedulerRules.length > 0) {
+      const rule = getActiveSleepRule(screenSchedulerRules, new Date());
+      if (rule) wakeDate = getNextWakeTime(rule, new Date());
+    }
     if (wakeDate) {
       try {
         await KioskModule.scheduleScreenWake(wakeDate.getTime());
-        console.log(`[ScreenScheduler] Native wake alarm set for ${wakeDate.toLocaleTimeString()}`);
+        console.log('[ScreenScheduler] Native wake alarm set for ' + wakeDate.toLocaleTimeString());
       } catch (error) {
         console.error('[ScreenScheduler] Failed to set native wake alarm:', error);
       }
     }
-  }, []);
+  }, [screenSchedulerDailySchedules, screenSchedulerRules]);
 
   // Helper: schedule the next native alarm for sleep
-  const scheduleNativeSleepAlarm = useCallback(async (rules: ScreenScheduleRule[]) => {
-    const nextSleep = getNextSleepTime(rules, new Date());
-    if (nextSleep) {
+  const scheduleNativeSleepAlarm = useCallback(async (rules?: ScreenScheduleRule[]) => {
+    let sleepDate: Date | null = null;
+    if (screenSchedulerDailySchedules && screenSchedulerDailySchedules.length > 0) {
+      sleepDate = getNextDailySleepTime(screenSchedulerDailySchedules, new Date());
+    } else {
+      const rulesToUse = rules || screenSchedulerRules;
+      const nextSleep = getNextSleepTime(rulesToUse, new Date());
+      if (nextSleep) sleepDate = nextSleep.date;
+    }
+    if (sleepDate) {
       try {
-        await KioskModule.scheduleScreenSleep(nextSleep.date.getTime());
-        console.log(`[ScreenScheduler] Native sleep alarm set for ${nextSleep.date.toLocaleTimeString()}`);
+        await KioskModule.scheduleScreenSleep(sleepDate.getTime());
+        console.log('[ScreenScheduler] Native sleep alarm set for ' + sleepDate.toLocaleTimeString());
       } catch (error) {
         console.error('[ScreenScheduler] Failed to set native sleep alarm:', error);
       }
     }
-  }, []);
+  }, [screenSchedulerDailySchedules, screenSchedulerRules]);
 
   // Helper: enter scheduled sleep mode
-  const enterScheduledSleep = useCallback(async (activeRule: ScreenScheduleRule) => {
+  const enterScheduledSleep = useCallback(async (activeRule?: ScreenScheduleRule) => {
     console.log('[ScreenScheduler] Entering scheduled sleep');
-    // Cancel any pending screensaver pre-check or inactivity timer to avoid
-    // activating the screensaver on top of scheduled sleep.
     clearTimer();
     setIsScheduledSleep(true);
     isScheduledSleepRef.current = true;
@@ -1498,13 +1513,10 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
     DeviceControlService.setScheduledSleep(true);
 
     try {
-      // Stop auto-brightness if active
       if (brightnessManagementRef.current && autoBrightnessEnabled) {
         await AutoBrightnessModule.stopAutoBrightness();
       }
-      // Schedule native alarm for wake-up BEFORE turning screen off
       await scheduleNativeWakeAlarm(activeRule);
-      // Now turn screen off (Device Owner = lockNow, else brightness 0)
       await KioskModule.turnScreenOff();
       console.log('[ScreenScheduler] Screen turned OFF via native module');
     } catch (error) {
@@ -1519,23 +1531,19 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoBrightnessEnabled, scheduleNativeWakeAlarm]);
-  // Note: clearTimer is intentionally omitted — it is a stable useCallback([], []) reference
-  // declared later in the file. Adding it to deps here would cause a "used before declaration" error.
 
   // Helper: exit scheduled sleep mode
   const exitScheduledSleep = useCallback(async () => {
-    console.log('[ScreenScheduler] Exiting scheduled sleep — waking screen');
+    console.log('[ScreenScheduler] Exiting scheduled sleep - waking screen');
     setIsScheduledSleep(false);
     isScheduledSleepRef.current = false;
     ApiService.updateStatus({ scheduledSleep: false });
     DeviceControlService.setScheduledSleep(false);
-    resetTimer(); // Restart inactivity timer
+    resetTimer();
 
     try {
-      // Turn screen on via native (WakeLock + FLAG_KEEP_SCREEN_ON)
       await KioskModule.turnScreenOn();
       console.log('[ScreenScheduler] Screen turned ON via native module');
-      // Restore brightness (only if app manages brightness)
       if (brightnessManagementRef.current) {
         if (autoBrightnessEnabled) {
           await AutoBrightnessModule.startAutoBrightness(autoBrightnessMin, autoBrightnessMax, autoBrightnessInterval, autoBrightnessOffset);
@@ -1554,21 +1562,18 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
       }
     }
 
-    // Schedule next sleep alarm
-    if (screenSchedulerEnabled && screenSchedulerRules.length > 0) {
-      await scheduleNativeSleepAlarm(screenSchedulerRules);
+    if (screenSchedulerEnabled) {
+      await scheduleNativeSleepAlarm();
     }
-  }, [autoBrightnessEnabled, autoBrightnessMin, autoBrightnessMax, autoBrightnessOffset, autoBrightnessInterval, defaultBrightness, screenSchedulerEnabled, screenSchedulerRules, scheduleNativeSleepAlarm]);
+  }, [autoBrightnessEnabled, autoBrightnessMin, autoBrightnessMax, autoBrightnessOffset, autoBrightnessInterval, defaultBrightness, screenSchedulerEnabled, scheduleNativeSleepAlarm]);
 
   // Listen for native alarm events (onScheduledWake / onScheduledSleep)
   useEffect(() => {
     if (!screenSchedulerEnabled) return;
 
     const wakeSubscription = DeviceEventEmitter.addListener('onScheduledWake', () => {
-      // Defer to next tick to avoid CalledFromWrongThreadException
-      // when react-native-screens manipulates views during commit on native thread
       setTimeout(() => {
-        console.log('[ScreenScheduler] 📢 Native WAKE alarm received');
+        console.log('[ScreenScheduler] Native WAKE alarm received');
         if (isScheduledSleepRef.current) {
           exitScheduledSleep();
         }
@@ -1576,15 +1581,10 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
     });
 
     const sleepSubscription = DeviceEventEmitter.addListener('onScheduledSleep', () => {
-      // Defer to next tick to avoid CalledFromWrongThreadException
-      // when react-native-screens manipulates views during commit on native thread
       setTimeout(() => {
-        console.log('[ScreenScheduler] 📢 Native SLEEP alarm received');
+        console.log('[ScreenScheduler] Native SLEEP alarm received');
         if (!isScheduledSleepRef.current) {
-          const activeRule = getActiveSleepRule(screenSchedulerRules, new Date());
-          if (activeRule) {
-            enterScheduledSleep(activeRule);
-          }
+          enterScheduledSleep();
         }
       }, 0);
     });
@@ -1593,25 +1593,17 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
       wakeSubscription.remove();
       sleepSubscription.remove();
     };
-  }, [screenSchedulerEnabled, screenSchedulerRules, exitScheduledSleep, enterScheduledSleep]);
+  }, [screenSchedulerEnabled, exitScheduledSleep, enterScheduledSleep]);
 
-  // JS-side scheduler check (setInterval) — entry into sleep + backup for wake
-  // IMPORTANT: We use isScheduledSleepRef.current (not the state variable) inside
-  // checkScreenSchedule to avoid a feedback loop. If isScheduledSleep were in the
-  // dependency array, every call to enterScheduledSleep/exitScheduledSleep would
-  // re-trigger this effect and immediately re-evaluate, making it impossible to
-  // wake the screen during a sleep window.
   useEffect(() => {
-    // Clear any existing scheduler timer
     if (screenSchedulerTimerRef.current) {
       clearInterval(screenSchedulerTimerRef.current);
       screenSchedulerTimerRef.current = null;
     }
 
-    if (!screenSchedulerEnabled || screenSchedulerRules.length === 0) {
-      // Scheduler disabled — cancel any pending native alarms and wake if needed
+    if (!screenSchedulerEnabled) {
       if (isScheduledSleepRef.current) {
-        console.log('[ScreenScheduler] Scheduler disabled — waking screen');
+        console.log('[ScreenScheduler] Scheduler disabled - waking screen');
         (async () => {
           try {
             await KioskModule.cancelScheduledScreenAlarms();
@@ -1619,22 +1611,24 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
           await exitScheduledSleep();
         })();
       } else {
-        // Just cancel alarms in case any are pending
         KioskModule.cancelScheduledScreenAlarms().catch(() => {});
       }
       return;
     }
 
     const checkScreenSchedule = () => {
-      const activeRule = getActiveSleepRule(screenSchedulerRules, new Date());
-      const shouldSleep = activeRule !== null;
+      let shouldSleep = false;
+      if (screenSchedulerDailySchedules && screenSchedulerDailySchedules.length > 0) {
+        const shouldBeOn = shouldScreenBeOnDailySchedule(screenSchedulerDailySchedules, new Date());
+        shouldSleep = !shouldBeOn;
+      } else if (screenSchedulerRules && screenSchedulerRules.length > 0) {
+        const activeRule = getActiveSleepRule(screenSchedulerRules, new Date());
+        shouldSleep = activeRule !== null;
+      }
 
       if (shouldSleep && !isScheduledSleepRef.current) {
-        // Enter sleep — this is the primary entry path
-        enterScheduledSleep(activeRule!);
+        enterScheduledSleep();
       } else if (!shouldSleep && isScheduledSleepRef.current) {
-        // Wake up — this is the backup path (JS timer still running, e.g., non-Device-Owner)
-        // In Device Owner mode, the native alarm handles wake instead
         exitScheduledSleep();
       }
     };
@@ -1876,7 +1870,8 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
       pdfViewerEnabledRef.current = savedPdfViewerEnabled;
       setPdfViewerEnabled(savedPdfViewerEnabled);
 
-      if (savedUrl) setUrl(savedUrl);
+      const DEFAULT_KIOSK_URL = 'https://absen.smkn2indramayu.sch.id/ScanAll';
+      setUrl(savedUrl || DEFAULT_KIOSK_URL);
       setAutoReload(savedAutoReload);
       setPauseWebMediaWhenHidden(savedPauseWebMediaWhenHidden);
       // #205 — re-apply the opt-in 2-way audio (intercom) mode on each kiosk launch: the
@@ -1922,7 +1917,7 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
 
       const savedBackButtonMode = str(K.BACK_BUTTON_MODE) ?? 'disabled';
       const savedBackButtonTimerDelay = num(K.BACK_BUTTON_TIMER_DELAY, 5);
-      const savedKeyboardMode = str(K.KEYBOARD_MODE) ?? 'default';
+      const savedKeyboardMode = str(K.KEYBOARD_MODE) ?? 'none';
       const savedAllowPowerButton = bool(K.ALLOW_POWER_BUTTON, true);
       const savedBlockFactoryReset = bool(K.BLOCK_FACTORY_RESET, false);
       const savedAllowNotifications = bool(K.ALLOW_NOTIFICATIONS, false);
@@ -2035,6 +2030,8 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
       const savedScreenSchedulerWakeOnTouch = bool(K.SCREEN_SCHEDULER_WAKE_ON_TOUCH, true);
       setScreenSchedulerEnabled(savedScreenSchedulerEnabled);
       setScreenSchedulerRules(savedScreenSchedulerRules);
+      const savedScreenSchedulerDailySchedules = jsonParse(K.SCREEN_SCHEDULER_DAILY_SCHEDULES, DEFAULT_DAY_SCHEDULES) as DaySchedule[];
+      setScreenSchedulerDailySchedules(savedScreenSchedulerDailySchedules);
       setScreenSchedulerWakeOnTouch(savedScreenSchedulerWakeOnTouch);
       
       // Load Keep Screen On setting
