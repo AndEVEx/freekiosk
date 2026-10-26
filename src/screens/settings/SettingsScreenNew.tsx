@@ -70,11 +70,9 @@ import Icon, { IconName, IconMap } from '../../components/Icon';
 
 // Tab configuration
 const TABS: { id: string; label: string; icon: IconName }[] = [
-  { id: 'general', label: 'General', icon: 'home' },
-  { id: 'dashboard', label: 'Dashboard', icon: 'view-dashboard' },
-  { id: 'display', label: 'Display', icon: 'monitor' },
-  { id: 'security', label: 'Security', icon: 'shield-lock' },
-  { id: 'advanced', label: 'Advanced', icon: 'cog' },
+  { id: 'general', label: 'Situs & URL', icon: 'web' },
+  { id: 'display', label: 'Jadwal Tablet', icon: 'clock-outline' },
+  { id: 'security', label: 'Keamanan & PIN', icon: 'shield-lock' },
 ];
 
 const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation, route }) => {
@@ -2017,6 +2015,8 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation, route })
             onDisplayModeChange={handleDisplayModeChange}
             url={url}
             onUrlChange={setUrl}
+            keyboardMode={keyboardMode}
+            onKeyboardModeChange={setKeyboardMode}
             dashboardModeEnabled={dashboardModeEnabled}
             onDashboardModeEnabledChange={setDashboardModeEnabled}
             externalAppPackage={externalAppPackage}
@@ -2284,6 +2284,9 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation, route })
         return (
           <SecurityTab
             displayMode={displayMode}
+            pin={pin}
+            onPinChange={setPin}
+            isPinConfigured={isPinConfigured}
             isDeviceOwner={isDeviceOwner}
             navigation={navigation}
             kioskEnabled={kioskEnabled}
@@ -2454,7 +2457,7 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation, route })
                   settingsStyles.tabLabel,
                   activeTab === tab.id && settingsStyles.tabLabelActive
                 ]}>
-                  {t(`screens.settingsMain.tabs.${tab.id}`)}
+                  {tab.label}
                 </Text>
               </View>
             </TouchableOpacity>
@@ -2463,7 +2466,7 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation, route })
       </View>
 
       {/* Cloud banner: hidden once the tablet is enrolled or the banner is closed */}
-      <CloudPromoBanner onConnect={() => setActiveTab('advanced')} refreshKey={activeTab} />
+      {/* Cloud promo banner removed */}
 
       {/* Tab Content */}
       <ScrollView 
