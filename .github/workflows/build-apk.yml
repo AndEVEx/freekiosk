@@ -29,6 +29,16 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      - name: Configure Gradle properties
+        run: |
+          cp android/gradle.properties.template android/gradle.properties
+          cat << 'EOF' >> android/gradle.properties
+          org.gradle.jvmargs=-Xmx3584m -XX:MaxMetaspaceSize=1024m -XX:+HeapDumpOnOutOfMemoryError
+          org.gradle.daemon=false
+          org.gradle.parallel=false
+          org.gradle.configureondemand=false
+          EOF
+
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
@@ -36,9 +46,12 @@ jobs:
         run: chmod +x android/gradlew
 
       - name: Build Android Release APK
+        env:
+          GRADLE_OPTS: "-Dorg.gradle.jvmargs=\"-Xmx3584m -XX:MaxMetaspaceSize=1024m\""
+          NODE_OPTIONS: "--max_old_space_size=3072"
         run: |
           cd android
-          ./gradlew assembleRelease --no-daemon
+          ./gradlew assembleRelease --no-daemon --no-parallel
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
