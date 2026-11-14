@@ -1,6 +1,7 @@
 /**
  * FreeKiosk - DailyScheduleEditor Component
  * Manage per-day tablet screen on/off schedule (Senin - Minggu)
+ * Supports multiple active intervals (e.g. Sesi 1 Pagi & Sesi 2 Sore) to save battery.
  */
 
 import React from 'react';
@@ -33,13 +34,16 @@ const DailyScheduleEditor: React.FC<DailyScheduleEditorProps> = ({
 
   const applySchoolPreset = () => {
     onChange([
-      { day: 1, name: 'Senin', enabled: true, onTime: '06:30', offTime: '16:00' },
-      { day: 2, name: 'Selasa', enabled: true, onTime: '06:30', offTime: '16:00' },
-      { day: 3, name: 'Rabu', enabled: true, onTime: '06:30', offTime: '16:00' },
-      { day: 4, name: 'Kamis', enabled: true, onTime: '06:30', offTime: '16:00' },
-      { day: 5, name: 'Jumat', enabled: true, onTime: '06:30', offTime: '15:30' },
-      { day: 6, name: 'Sabtu', enabled: false, onTime: '06:30', offTime: '13:00' },
-      { day: 0, name: 'Minggu', enabled: false, onTime: '06:30', offTime: '16:00' },
+      // Senin - Kamis: nyala1 05:30, mati1 08:30, nyala2 14:45, mati2 17:00
+      { day: 1, name: 'Senin', enabled: true, onTime: '05:30', offTime: '08:30', enableSession2: true, onTime2: '14:45', offTime2: '17:00' },
+      { day: 2, name: 'Selasa', enabled: true, onTime: '05:30', offTime: '08:30', enableSession2: true, onTime2: '14:45', offTime2: '17:00' },
+      { day: 3, name: 'Rabu', enabled: true, onTime: '05:30', offTime: '08:30', enableSession2: true, onTime2: '14:45', offTime2: '17:00' },
+      { day: 4, name: 'Kamis', enabled: true, onTime: '05:30', offTime: '08:30', enableSession2: true, onTime2: '14:45', offTime2: '17:00' },
+      // Khusus Jumat: nyala1 05:30, mati1 08:30, nyala2 11:30, mati2 15:30
+      { day: 5, name: 'Jumat', enabled: true, onTime: '05:30', offTime: '08:30', enableSession2: true, onTime2: '11:30', offTime2: '15:30' },
+      // Libur
+      { day: 6, name: 'Sabtu', enabled: false, onTime: '06:30', offTime: '13:00', enableSession2: false, onTime2: '14:00', offTime2: '17:00' },
+      { day: 0, name: 'Minggu', enabled: false, onTime: '06:30', offTime: '16:00', enableSession2: false, onTime2: '14:00', offTime2: '17:00' },
     ]);
   };
 
@@ -50,6 +54,7 @@ const DailyScheduleEditor: React.FC<DailyScheduleEditorProps> = ({
         enabled: true,
         onTime: '06:30',
         offTime: '16:00',
+        enableSession2: false,
       }))
     );
   };
@@ -67,11 +72,11 @@ const DailyScheduleEditor: React.FC<DailyScheduleEditorProps> = ({
       <View style={styles.presetContainer}>
         <TouchableOpacity style={styles.presetButton} onPress={applySchoolPreset}>
           <Icon name="school-outline" size={16} color={Colors.primary} />
-          <Text style={styles.presetButtonText}>Preset Jam Sekolah (Senin-Jumat)</Text>
+          <Text style={styles.presetButtonText}>Preset Jam Sekolah (Damay SMKN 2)</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.presetButton} onPress={applyEverydayPreset}>
           <Icon name="calendar-outline" size={16} color={Colors.primary} />
-          <Text style={styles.presetButtonText}>Setiap Hari</Text>
+          <Text style={styles.presetButtonText}>Setiap Hari Penuh</Text>
         </TouchableOpacity>
       </View>
 
@@ -97,23 +102,66 @@ const DailyScheduleEditor: React.FC<DailyScheduleEditorProps> = ({
           </View>
 
           {item.enabled ? (
-            <View style={styles.timeRow}>
-              <View style={styles.timeCol}>
-                <TimeInput
-                  label="Jam Layar Nyala"
-                  value={item.onTime}
-                  onChange={time => handleUpdateDay(item.day, { onTime: time })}
-                />
+            <View style={styles.scheduleBody}>
+              {/* Sesi 1 (Pagi) */}
+              <View style={styles.sessionSection}>
+                <Text style={styles.sessionLabel}>Sesi 1 (Pagi / Masuk):</Text>
+                <View style={styles.timeRow}>
+                  <View style={styles.timeCol}>
+                    <TimeInput
+                      label="Nyala 1"
+                      value={item.onTime}
+                      onChange={time => handleUpdateDay(item.day, { onTime: time })}
+                    />
+                  </View>
+                  <View style={styles.timeArrow}>
+                    <Text style={styles.arrowText}>— s/d —</Text>
+                  </View>
+                  <View style={styles.timeCol}>
+                    <TimeInput
+                      label="Mati 1"
+                      value={item.offTime}
+                      onChange={time => handleUpdateDay(item.day, { offTime: time })}
+                    />
+                  </View>
+                </View>
               </View>
-              <View style={styles.timeArrow}>
-                <Text style={styles.arrowText}>— s/d —</Text>
-              </View>
-              <View style={styles.timeCol}>
-                <TimeInput
-                  label="Jam Layar Mati"
-                  value={item.offTime}
-                  onChange={time => handleUpdateDay(item.day, { offTime: time })}
-                />
+
+              {/* Sesi 2 (Sore / Pulang) */}
+              <View style={styles.sessionSection}>
+                <View style={styles.sessionHeaderRow}>
+                  <Text style={styles.sessionLabel}>Sesi 2 (Siang / Sore):</Text>
+                  <TouchableOpacity
+                    style={[styles.miniBadgeToggle, item.enableSession2 ? styles.miniBadgeActive : styles.miniBadgeInactive]}
+                    onPress={() => handleUpdateDay(item.day, { enableSession2: !item.enableSession2 })}
+                  >
+                    <Text style={styles.miniBadgeText}>
+                      {item.enableSession2 ? 'Aktif (Ada Sesi 2)' : '+ Tambah Sesi 2'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                {item.enableSession2 && (
+                  <View style={styles.timeRow}>
+                    <View style={styles.timeCol}>
+                      <TimeInput
+                        label="Nyala 2"
+                        value={item.onTime2 || '14:45'}
+                        onChange={time => handleUpdateDay(item.day, { onTime2: time })}
+                      />
+                    </View>
+                    <View style={styles.timeArrow}>
+                      <Text style={styles.arrowText}>— s/d —</Text>
+                    </View>
+                    <View style={styles.timeCol}>
+                      <TimeInput
+                        label="Mati 2"
+                        value={item.offTime2 || '17:00'}
+                        onChange={time => handleUpdateDay(item.day, { offTime2: time })}
+                      />
+                    </View>
+                  </View>
+                )}
               </View>
             </View>
           ) : (
@@ -140,7 +188,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: Colors.surfaceVariant,
     paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs + 2,
+    paddingVertical: Spacing.xs + 4,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: Colors.border,
@@ -149,7 +197,7 @@ const styles = StyleSheet.create({
   presetButtonText: {
     ...Typography.caption,
     color: Colors.primary,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   dayCard: {
     backgroundColor: Colors.surface,
@@ -179,55 +227,93 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
   },
   badge: {
-    paddingHorizontal: Spacing.sm,
+    paddingHorizontal: 8,
     paddingVertical: 2,
-    borderRadius: 4,
+    borderRadius: 6,
   },
   badgeActive: {
-    backgroundColor: 'rgba(34, 197, 94, 0.15)',
+    backgroundColor: Colors.successLight || '#E8F5E9',
   },
   badgeInactive: {
-    backgroundColor: 'rgba(148, 163, 184, 0.2)',
+    backgroundColor: Colors.surfaceVariant,
   },
   badgeText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '700',
   },
   badgeTextActive: {
-    color: '#16a34a',
+    color: Colors.successDark || '#2E7D32',
   },
   badgeTextInactive: {
     color: Colors.textSecondary,
   },
   toggleButton: {
-    paddingHorizontal: Spacing.sm + 2,
-    paddingVertical: Spacing.xs,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
     borderRadius: 6,
   },
   toggleActive: {
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    backgroundColor: Colors.surfaceVariant,
   },
   toggleInactive: {
-    backgroundColor: 'rgba(34, 197, 94, 0.1)',
+    backgroundColor: Colors.primary,
   },
   toggleText: {
     fontSize: 12,
     fontWeight: '600',
     color: Colors.textPrimary,
   },
+  scheduleBody: {
+    marginTop: Spacing.sm,
+    gap: Spacing.sm,
+  },
+  sessionSection: {
+    backgroundColor: Colors.surfaceVariant,
+    padding: Spacing.sm,
+    borderRadius: 8,
+  },
+  sessionHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  sessionLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: Colors.textSecondary,
+    marginBottom: 2,
+  },
+  miniBadgeToggle: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 5,
+  },
+  miniBadgeActive: {
+    backgroundColor: Colors.primaryLight || '#E3F2FD',
+  },
+  miniBadgeInactive: {
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  miniBadgeText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: Colors.primary,
+  },
   timeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: Spacing.md,
-    gap: Spacing.sm,
+    marginTop: 4,
   },
   timeCol: {
     flex: 1,
   },
   timeArrow: {
-    paddingTop: 18,
-    alignItems: 'center',
+    paddingHorizontal: 8,
     justifyContent: 'center',
+    alignItems: 'center',
   },
   arrowText: {
     ...Typography.caption,
@@ -236,8 +322,8 @@ const styles = StyleSheet.create({
   disabledHint: {
     ...Typography.caption,
     color: Colors.textSecondary,
+    marginTop: Spacing.sm,
     fontStyle: 'italic',
-    marginTop: Spacing.xs,
   },
 });
 

@@ -13,7 +13,7 @@ import MotionDetector from '../components/MotionDetector';
 import ProximityDetectionModule, { onProximityNear as onProximityNearEvent } from '../utils/ProximityDetectionModule';
 import ExternalAppOverlay from '../components/ExternalAppOverlay';
 import { StorageService, toPrintOrigins } from '../utils/storage';
-import { saveSecurePin, saveSecureMqttPassword, getSecureBasicAuthPassword } from '../utils/secureStorage';
+import { saveSecurePin, saveSecureMqttPassword, getSecureBasicAuthPassword, getSecureFormLoginPassword } from '../utils/secureStorage';
 import KioskModule from '../utils/KioskModule';
 import AppLauncherModule from '../utils/AppLauncherModule';
 import OverlayServiceModule from '../utils/OverlayServiceModule';
@@ -258,6 +258,10 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
   const [customUserAgent, setCustomUserAgent] = useState<string>('');
   const [basicAuthUsername, setBasicAuthUsername] = useState<string>('');
   const [basicAuthPassword, setBasicAuthPassword] = useState<string>('');
+  const [formLoginEnabled, setFormLoginEnabled] = useState<boolean>(false);
+  const [formLoginUsername, setFormLoginUsername] = useState<string>('');
+  const [formLoginPassword, setFormLoginPassword] = useState<string>('');
+  const [formLoginTapel, setFormLoginTapel] = useState<string>('2026/2027');
 
   // Lock screen quick controls
   const [lockscreenEmergencyEnabled, setLockscreenEmergencyEnabled] = useState<boolean>(false);
@@ -2114,6 +2118,15 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
       const savedBasicAuthPassword = await getSecureBasicAuthPassword();
       setBasicAuthUsername(savedBasicAuthUsername);
       setBasicAuthPassword(savedBasicAuthPassword);
+
+      const savedFormLoginEnabled = bool(K.FORM_LOGIN_ENABLED, false);
+      const savedFormLoginUsername = str(K.FORM_LOGIN_USERNAME) ?? '';
+      const savedFormLoginPassword = await getSecureFormLoginPassword();
+      const savedFormLoginTapel = str(K.FORM_LOGIN_TAPEL) ?? '2026/2027';
+      setFormLoginEnabled(savedFormLoginEnabled);
+      setFormLoginUsername(savedFormLoginUsername);
+      setFormLoginPassword(savedFormLoginPassword);
+      setFormLoginTapel(savedFormLoginTapel);
       
       // Load Media Player settings
       if (savedDisplayMode === 'media_player') {
@@ -3110,6 +3123,12 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
               disableUserZoom={disableUserZoom}
               disableOverscroll={disableOverscroll}
               customUserAgent={customUserAgent}
+              formLoginConfig={{
+                enabled: formLoginEnabled,
+                username: formLoginUsername,
+                password: formLoginPassword,
+                tapel: formLoginTapel,
+              }}
               basicAuthCredential={
                 basicAuthUsername
                   ? { username: basicAuthUsername, password: basicAuthPassword }

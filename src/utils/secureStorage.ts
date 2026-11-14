@@ -11,6 +11,7 @@ const API_KEY_SERVICE = 'freekiosk_api_key';
 const MQTT_PASSWORD_SERVICE = 'freekiosk_mqtt_password';
 const WIFI_PASSWORD_SERVICE_PREFIX = 'freekiosk_wifi_password:';
 const BASIC_AUTH_PASSWORD_SERVICE = 'freekiosk_basic_auth_password';
+const WEB_FORM_LOGIN_PASSWORD_SERVICE = 'damay_kiosk_form_login_password';
 const CLOUD_CREDENTIALS_SERVICE = 'freekiosk_cloud';
 const LEGACY_API_KEY = '@kiosk_rest_api_key'; // Legacy AsyncStorage key for migration
 const ATTEMPTS_KEY = '@kiosk_pin_attempts';
@@ -873,6 +874,41 @@ export async function getSecureBasicAuthPassword(): Promise<string> {
   } catch (error) {
     console.error('[SecureStorage] Error getting basic auth password:', error);
     return '';
+  }
+}
+
+export async function saveSecureFormLoginPassword(password: string): Promise<boolean> {
+  try {
+    if (!password || password.trim() === '') {
+      await clearSecureFormLoginPassword();
+      return true;
+    }
+    await Keychain.setGenericPassword('form_login_password', password, {
+      service: WEB_FORM_LOGIN_PASSWORD_SERVICE,
+      accessible: Keychain.ACCESSIBLE.WHEN_UNLOCKED,
+    });
+    return true;
+  } catch (error) {
+    console.error('[SecureStorage] Error saving form login password:', error);
+    return false;
+  }
+}
+
+export async function getSecureFormLoginPassword(): Promise<string> {
+  try {
+    const credentials = await Keychain.getGenericPassword({ service: WEB_FORM_LOGIN_PASSWORD_SERVICE });
+    return credentials ? credentials.password : '';
+  } catch (error) {
+    console.error('[SecureStorage] Error getting form login password:', error);
+    return '';
+  }
+}
+
+export async function clearSecureFormLoginPassword(): Promise<void> {
+  try {
+    await Keychain.resetGenericPassword({ service: WEB_FORM_LOGIN_PASSWORD_SERVICE });
+  } catch (error) {
+    console.error('[SecureStorage] Error clearing form login password:', error);
   }
 }
 

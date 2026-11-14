@@ -45,6 +45,17 @@ export interface GeneralTabProps {
   basicAuthPassword?: string;
   onBasicAuthPasswordChange?: (password: string) => void;
 
+  // Auto Login Form Web (Cpanel / Login Form)
+  formLoginEnabled?: boolean;
+  onFormLoginEnabledChange?: (value: boolean) => void;
+  formLoginUsername?: string;
+  onFormLoginUsernameChange?: (username: string) => void;
+  formLoginPassword?: string;
+  onFormLoginPasswordChange?: (password: string) => void;
+  formLoginTapel?: string;
+  onFormLoginTapelChange?: (tapel: string) => void;
+  onBasicAuthPasswordChange?: (password: string) => void;
+
   // Auto reload (PRIMARY)
   autoReload: boolean;
   onAutoReloadChange: (value: boolean) => void;
@@ -167,6 +178,15 @@ const GeneralTab: React.FC<GeneralTabProps> = ({
   onBasicAuthUsernameChange,
   basicAuthPassword = '',
   onBasicAuthPasswordChange = () => {},
+  formLoginEnabled = false,
+  onFormLoginEnabledChange = () => {},
+  formLoginUsername = '',
+  onFormLoginUsernameChange = () => {},
+  formLoginPassword = '',
+  onFormLoginPasswordChange = () => {},
+  formLoginTapel = '2026/2027',
+  onFormLoginTapelChange = () => {},
+  onBasicAuthPasswordChange = () => {},
   autoReload,
   onAutoReloadChange,
   keyboardMode = 'none',
@@ -267,6 +287,49 @@ const GeneralTab: React.FC<GeneralTabProps> = ({
               hint="Password otentikasi browser awal."
               autoCapitalize="none"
             />
+          </View>
+        )}
+      </SettingsSection>
+
+            {/* 4b. Auto Sign In Form Web (Cpanel / Login Form Otomatis) */}
+      <SettingsSection title="Auto Sign In Form Web (Cpanel Absen)" icon="account-key-outline">
+        <SettingsSwitch
+          label="Aktifkan Auto Sign In Form"
+          value={formLoginEnabled}
+          onValueChange={onFormLoginEnabledChange}
+          hint="Otomatis mengisi Username, Password, memilih Tahun Pelajaran (Tapel), lalu menekan Sign In pada halaman login."
+        />
+        {formLoginEnabled && (
+          <View style={{ marginTop: Spacing.sm }}>
+            <SettingsInput
+              label="Username / NIP"
+              value={formLoginUsername}
+              onChangeText={onFormLoginUsernameChange}
+              placeholder="Username atau NIP"
+              hint="Username / NIP untuk akun Cpanel Absen."
+              autoCapitalize="none"
+            />
+            <View style={{ marginTop: Spacing.sm }}>
+              <SettingsInput
+                label="Password Akun"
+                value={formLoginPassword}
+                onChangeText={onFormLoginPasswordChange}
+                placeholder="Password Cpanel"
+                secureTextEntry={true}
+                hint="Password login akun Anda."
+                autoCapitalize="none"
+              />
+            </View>
+            <View style={{ marginTop: Spacing.sm }}>
+              <SettingsInput
+                label="Pilihan Tapel (Tahun Pelajaran)"
+                value={formLoginTapel}
+                onChangeText={onFormLoginTapelChange}
+                placeholder="2026/2027"
+                hint="Ketik teks Tapel yang akan otomatis dipilih (contoh: 2026/2027)."
+                autoCapitalize="none"
+              />
+            </View>
           </View>
         )}
       </SettingsSection>

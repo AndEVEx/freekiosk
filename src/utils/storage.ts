@@ -222,6 +222,10 @@ export const KEYS = {
   LOCKSCREEN_ROTATION_LOCK_ENABLED: '@kiosk_lockscreen_rotation_lock_enabled',
   // HTTP Basic Auth
   HTTP_BASIC_AUTH_USERNAME: '@kiosk_http_basic_auth_username',
+  // Web Form Auto Login (Cpanel / Signin form)
+  FORM_LOGIN_ENABLED: '@kiosk_form_login_enabled',
+  FORM_LOGIN_USERNAME: '@kiosk_form_login_username',
+  FORM_LOGIN_TAPEL: '@kiosk_form_login_tapel',
   // Cloud sync metadata (local tracking only, never synced)
   CONFIG_UPDATED_AT: '@cloud_config_updated_at',
   CONFIG_VERSION: '@cloud_config_version',
@@ -3501,6 +3505,60 @@ export const StorageService = {
     } catch (error) {
       console.error('Error getting dashboard icon size:', error);
       return DEFAULT_DASHBOARD_ICON_SIZE;
+    }
+  },
+
+    saveFormLoginEnabled: async (enabled: boolean): Promise<void> => {
+    try {
+      await AsyncStorage.setItem(KEYS.FORM_LOGIN_ENABLED, JSON.stringify(enabled));
+    } catch (error) {
+      console.error('Error saving form login enabled:', error);
+    }
+  },
+
+  getFormLoginEnabled: async (): Promise<boolean> => {
+    try {
+      const value = await AsyncStorage.getItem(KEYS.FORM_LOGIN_ENABLED);
+      return value !== null ? JSON.parse(value) : false;
+    } catch (error) {
+      console.error('Error getting form login enabled:', error);
+      return false;
+    }
+  },
+
+  saveFormLoginUsername: async (username: string): Promise<void> => {
+    try {
+      await AsyncStorage.setItem(KEYS.FORM_LOGIN_USERNAME, username);
+    } catch (error) {
+      console.error('Error saving form login username:', error);
+    }
+  },
+
+  getFormLoginUsername: async (): Promise<string> => {
+    try {
+      const value = await AsyncStorage.getItem(KEYS.FORM_LOGIN_USERNAME);
+      return value ?? '';
+    } catch (error) {
+      console.error('Error getting form login username:', error);
+      return '';
+    }
+  },
+
+  saveFormLoginTapel: async (tapel: string): Promise<void> => {
+    try {
+      await AsyncStorage.setItem(KEYS.FORM_LOGIN_TAPEL, tapel);
+    } catch (error) {
+      console.error('Error saving form login tapel:', error);
+    }
+  },
+
+  getFormLoginTapel: async (): Promise<string> => {
+    try {
+      const value = await AsyncStorage.getItem(KEYS.FORM_LOGIN_TAPEL);
+      return value ?? '2026/2027';
+    } catch (error) {
+      console.error('Error getting form login tapel:', error);
+      return '2026/2027';
     }
   },
 

@@ -27,7 +27,7 @@ import { Camera } from 'react-native-vision-camera';
 import { StorageService } from '../../utils/storage';
 import i18n, { setAppLanguage, resolveSupportedLanguage, SupportedLanguage } from '../../i18n';
 import { useTranslation } from 'react-i18next';
-import { saveSecurePin, hasSecurePin, clearSecurePin, saveSecureBasicAuthPassword, getSecureBasicAuthPassword } from '../../utils/secureStorage';
+import { saveSecurePin, hasSecurePin, clearSecurePin, saveSecureBasicAuthPassword, getSecureBasicAuthPassword, saveSecureFormLoginPassword, getSecureFormLoginPassword } from '../../utils/secureStorage';
 import CertificateModuleTyped, { CertificateInfo } from '../../utils/CertificateModule';
 import AppLauncherModule, { AppInfo } from '../../utils/AppLauncherModule';
 import OverlayPermissionModule from '../../utils/OverlayPermissionModule';
@@ -245,6 +245,10 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation, route })
   const [intercomModeEnabled, setIntercomModeEnabled] = useState<boolean>(false);
   const [basicAuthUsername, setBasicAuthUsername] = useState<string>('');
   const [basicAuthPassword, setBasicAuthPassword] = useState<string>('');
+  const [formLoginEnabled, setFormLoginEnabled] = useState<boolean>(false);
+  const [formLoginUsername, setFormLoginUsername] = useState<string>('');
+  const [formLoginPassword, setFormLoginPassword] = useState<string>('');
+  const [formLoginTapel, setFormLoginTapel] = useState<string>('2026/2027');
   
   // Media Player states
   const [mediaPlayerItems, setMediaPlayerItems] = useState<MediaItem[]>([]);
@@ -786,6 +790,15 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation, route })
     const savedBasicAuthPassword = await getSecureBasicAuthPassword();
     setBasicAuthUsername(savedBasicAuthUsername);
     setBasicAuthPassword(savedBasicAuthPassword);
+
+    const savedFormLoginEnabled = await StorageService.getFormLoginEnabled();
+    const savedFormLoginUsername = await StorageService.getFormLoginUsername();
+    const savedFormLoginPassword = await getSecureFormLoginPassword();
+    const savedFormLoginTapel = await StorageService.getFormLoginTapel();
+    setFormLoginEnabled(savedFormLoginEnabled);
+    setFormLoginUsername(savedFormLoginUsername);
+    setFormLoginPassword(savedFormLoginPassword);
+    setFormLoginTapel(savedFormLoginTapel);
 
     // Media Player settings
     const savedMediaItems = await StorageService.getMediaPlayerItems();
@@ -1628,6 +1641,11 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation, route })
     // Checked rather than discarded: on a device whose Keystore is broken (#258) this
     // returns false, and saving the whole settings screen used to report success while
     // the password had gone nowhere.
+    await StorageService.saveFormLoginEnabled(formLoginEnabled);
+    await StorageService.saveFormLoginUsername(formLoginUsername);
+    await saveSecureFormLoginPassword(formLoginPassword);
+    await StorageService.saveFormLoginTapel(formLoginTapel);
+
     const basicAuthSaved = await saveSecureBasicAuthPassword(basicAuthPassword);
     if (!basicAuthSaved && basicAuthPassword) {
       Alert.alert(
@@ -2157,6 +2175,14 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation, route })
             onBasicAuthUsernameChange={setBasicAuthUsername}
             basicAuthPassword={basicAuthPassword}
             onBasicAuthPasswordChange={setBasicAuthPassword}
+            formLoginEnabled={formLoginEnabled}
+            onFormLoginEnabledChange={setFormLoginEnabled}
+            formLoginUsername={formLoginUsername}
+            onFormLoginUsernameChange={setFormLoginUsername}
+            formLoginPassword={formLoginPassword}
+            onFormLoginPasswordChange={setFormLoginPassword}
+            formLoginTapel={formLoginTapel}
+            onFormLoginTapelChange={setFormLoginTapel}
             onBackToKiosk={() => { revokeSettingsAccess(); navigation.reset({ index: 0, routes: [{ name: 'Kiosk' }] }); }}
           />
         );
