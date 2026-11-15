@@ -926,7 +926,7 @@ const WebViewComponent = forwardRef<WebViewComponentRef, WebViewComponentProps>(
     return '';
   };
 
-    const getAutoFormLoginScript = (): string => {
+  const getAutoFormLoginScript = (): string => {
     if (!formLoginConfig || !formLoginConfig.enabled || !formLoginConfig.username) {
       return '';
     }
@@ -934,75 +934,63 @@ const WebViewComponent = forwardRef<WebViewComponentRef, WebViewComponentProps>(
     const safePass = JSON.stringify(formLoginConfig.password || '');
     const targetTapel = JSON.stringify(formLoginConfig.tapel || '2026/2027');
 
-    return 
-      (function() {
-        var hasAttempted = false;
-        function tryAutoLogin() {
-          if (hasAttempted) return;
-          // Cek form login Cpanel
-          var userInput = document.querySelector('input[name="email"]') || document.querySelector('#email') || document.querySelector('input[name="username"]');
-          var passInput = document.querySelector('input[name="password"]') || document.querySelector('#passwordInput');
-          var tapelSelect = document.querySelector('select[name="tapel"]');
-          var submitBtn = document.querySelector('button[type="submit"]') || document.querySelector('form button');
-
-          if (userInput && passInput) {
-            hasAttempted = true;
-            // 1. Isi Username
-            userInput.value = ;
-            userInput.dispatchEvent(new Event('input', { bubbles: true }));
-            userInput.dispatchEvent(new Event('change', { bubbles: true }));
-
-            // 2. Isi Password
-            passInput.value = ;
-            passInput.dispatchEvent(new Event('input', { bubbles: true }));
-            passInput.dispatchEvent(new Event('change', { bubbles: true }));
-
-            // 3. Pilih Tapel (Tahun Pelajaran)
-            if (tapelSelect) {
-              var matched = false;
-              for (var i = 0; i < tapelSelect.options.length; i++) {
-                var opt = tapelSelect.options[i];
-                if (opt.text.indexOf() !== -1 || opt.value === ) {
-                  tapelSelect.selectedIndex = i;
-                  matched = true;
-                  break;
-                }
-              }
-              // Jika tidak persis sama, pilih opsi pertama yang bukan 0
-              if (!matched && tapelSelect.options.length > 1) {
-                tapelSelect.selectedIndex = 1;
-              }
-              tapelSelect.dispatchEvent(new Event('change', { bubbles: true }));
-            }
-
-            // 4. Klik Sign In setelah sedikit jeda
-            setTimeout(function() {
-              if (submitBtn) {
-                submitBtn.click();
-              } else {
-                var form = userInput.closest('form');
-                if (form) form.submit();
-              }
-            }, 600);
-          }
-        }
-
-        // Jalankan segera dan observasi perubahan DOM
-        if (document.readyState === 'complete' || document.readyState === 'interactive') {
-          setTimeout(tryAutoLogin, 500);
-        } else {
-          document.addEventListener('DOMContentLoaded', function() {
-            setTimeout(tryAutoLogin, 500);
-          });
-        }
-        var formObs = new MutationObserver(function() {
-          tryAutoLogin();
-        });
-        if (document.body) {
-          formObs.observe(document.body, { childList: true, subtree: true });
-        }
-      })();
-    ;
+    return (
+      '(function() {' +
+      '  var hasAttempted = false;' +
+      '  function tryAutoLogin() {' +
+      '    if (hasAttempted) return;' +
+      '    var userInput = document.querySelector(\'input[name="email"]\') || document.querySelector(\'#email\') || document.querySelector(\'input[name="username"]\');' +
+      '    var passInput = document.querySelector(\'input[name="password"]\') || document.querySelector(\'#passwordInput\');' +
+      '    var tapelSelect = document.querySelector(\'select[name="tapel"]\');' +
+      '    var submitBtn = document.querySelector(\'button[type="submit"]\') || document.querySelector(\'form button\');' +
+      '    if (userInput && passInput) {' +
+      '      hasAttempted = true;' +
+      '      userInput.value = ' + safeUser + ';' +
+      '      userInput.dispatchEvent(new Event(\'input\', { bubbles: true }));' +
+      '      userInput.dispatchEvent(new Event(\'change\', { bubbles: true }));' +
+      '      passInput.value = ' + safePass + ';' +
+      '      passInput.dispatchEvent(new Event(\'input\', { bubbles: true }));' +
+      '      passInput.dispatchEvent(new Event(\'change\', { bubbles: true }));' +
+      '      if (tapelSelect) {' +
+      '        var matched = false;' +
+      '        for (var i = 0; i < tapelSelect.options.length; i++) {' +
+      '          var opt = tapelSelect.options[i];' +
+      '          if (opt.text.indexOf(' + targetTapel + ') !== -1 || opt.value === ' + targetTapel + ') {' +
+      '            tapelSelect.selectedIndex = i;' +
+      '            matched = true;' +
+      '            break;' +
+      '          }' +
+      '        }' +
+      '        if (!matched && tapelSelect.options.length > 1) {' +
+      '          tapelSelect.selectedIndex = 1;' +
+      '        }' +
+      '        tapelSelect.dispatchEvent(new Event(\'change\', { bubbles: true }));' +
+      '      }' +
+      '      setTimeout(function() {' +
+      '        if (submitBtn) {' +
+      '          submitBtn.click();' +
+      '        } else {' +
+      '          var form = userInput.closest(\'form\');' +
+      '          if (form) form.submit();' +
+      '        }' +
+      '      }, 600);' +
+      '    }' +
+      '  }' +
+      '  if (document.readyState === \'complete\' || document.readyState === \'interactive\') {' +
+      '    setTimeout(tryAutoLogin, 500);' +
+      '  } else {' +
+      '    document.addEventListener(\'DOMContentLoaded\', function() {' +
+      '      setTimeout(tryAutoLogin, 500);' +
+      '    });' +
+      '  }' +
+      '  var formObs = new MutationObserver(function() {' +
+      '    tryAutoLogin();' +
+      '  });' +
+      '  if (document.body) {' +
+      '    formObs.observe(document.body, { childList: true, subtree: true });' +
+      '  }' +
+      '})();'
+    );
   };
 
   const combinedInjectedJavaScript = injectedJavaScript + getKeyboardModeScript() + getAutoFormLoginScript();
