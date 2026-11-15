@@ -186,7 +186,6 @@ const GeneralTab: React.FC<GeneralTabProps> = ({
   onFormLoginPasswordChange = () => {},
   formLoginTapel = '2026/2027',
   onFormLoginTapelChange = () => {},
-  onBasicAuthPasswordChange = () => {},
   autoReload,
   onAutoReloadChange,
   keyboardMode = 'none',
