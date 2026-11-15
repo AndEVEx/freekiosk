@@ -835,11 +835,26 @@ const WebViewComponent = forwardRef<WebViewComponentRef, WebViewComponentProps>(
     if (keyboardMode === 'none' || keyboardMode === 'hide' || keyboardMode === 'scanner') {
       return `
         (function() {
+          function isAuthOrPasswordInput(el) {
+            if (!el) return false;
+            if (el.type === "password" || el.id === "passwordInput" || el.name === "password") return true;
+            var name = (el.name || "").toLowerCase();
+            var id = (el.id || "").toLowerCase();
+            if (name === "email" || name === "username" || id === "email" || id === "username") return true;
+            if (el.closest && (el.closest("form[action*=\"process\"]") || el.closest("form[action*=\"login\"]") || el.closest(".auth-content") || el.closest(".auth-wrapper"))) return true;
+            return false;
+          }
           function suppressSoftKeyboard() {
             try {
-              var inputs = document.querySelectorAll('input, textarea, [contenteditable]');
+              var inputs = document.querySelectorAll("input, textarea, [contenteditable]");
               inputs.forEach(function(el) {
-                el.setAttribute('inputmode', 'none');
+                if (!isAuthOrPasswordInput(el)) {
+                  el.setAttribute("inputmode", "none");
+                } else {
+                  if (el.getAttribute("inputmode") === "none") {
+                    el.removeAttribute("inputmode");
+                  }
+                }
               });
             } catch (e) {}
           }
@@ -854,7 +869,13 @@ const WebViewComponent = forwardRef<WebViewComponentRef, WebViewComponentProps>(
           }
           document.addEventListener('focusin', function(e) {
             if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable)) {
-              e.target.setAttribute('inputmode', 'none');
+              if (!isAuthOrPasswordInput(e.target)) {
+                e.target.setAttribute("inputmode", "none");
+              } else {
+                if (e.target.getAttribute("inputmode") === "none") {
+                  e.target.removeAttribute("inputmode");
+                }
+              }
             }
           }, true);
         })();
