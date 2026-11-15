@@ -9,7 +9,6 @@ import MediaPlayerComponent from '../components/MediaPlayerComponent';
 import { defaultMediaCacheEnabled, defaultMediaUnattended, DEFAULT_MEDIA_CACHE_LIMIT_MB } from '../utils/MediaCache';
 import { SignagePlaylist } from '../utils/SignagePlaylist';
 import StatusBar from '../components/StatusBar';
-import MotionDetector from '../components/MotionDetector';
 import ProximityDetectionModule, { onProximityNear as onProximityNearEvent } from '../utils/ProximityDetectionModule';
 import ExternalAppOverlay from '../components/ExternalAppOverlay';
 import { StorageService, toPrintOrigins } from '../utils/storage';
@@ -3195,13 +3194,7 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
         />
       )}
 
-      {/* Motion Detector - Active during pre-check OR when screensaver is ON (only if screen is focused) */}
-      <MotionDetector
-        enabled={isFocused && !cameraStreamActive && (motionAlwaysOn || (motionEnabled && (isPreCheckingMotion || isScreensaverActive)))}
-        onMotionDetected={onMotionDetected}
-        sensitivity={motionSensitivity}
-        cameraPosition={motionCameraPosition}
-      />
+      {/* Motion Detector disabled - camera freed for WebView */}
 
       {/* Visual Button - WebView/Media mode only */}
       {/* In button mode: button always clickable, visibility controlled by opacity */}
