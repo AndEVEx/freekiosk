@@ -1397,6 +1397,7 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation, route })
   // ============ SAVE FUNCTION ============
 
   const handleSave = async (): Promise<void> => {
+    try {
     // Validation
     if (displayMode === 'webview' && !url && !dashboardModeEnabled) {
       Alert.alert(t('screens.settingsMain.error'), t('screens.settingsMain.enterUrl'));
@@ -1477,9 +1478,7 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation, route })
         if (finalUrl.includes('.')) {
           finalUrl = 'https://' + finalUrl;
           setUrl(finalUrl);
-          Alert.alert(t('screens.settingsMain.urlUpdatedTitle'), t('screens.settingsMain.urlUpdatedMessage', { url: finalUrl }));
-          return;
-        } else {
+        } else if (finalUrl.length > 0) {
           Alert.alert(t('screens.settingsMain.invalidUrlTitle'), t('screens.settingsMain.invalidUrlMessage'));
           return;
         }
@@ -1506,16 +1505,6 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation, route })
         Alert.alert(t('screens.settingsMain.error'), t('screens.settingsMain.numericPinLength'));
         return;
       }
-    } else if (!isPinConfigured && !pin) {
-      // Save can be pressed from any tab, and the PIN lives on General. "Please enter a
-      // password" named neither, so an operator saving from Display had nothing to go
-      // on. Say where, and take them there.
-      Alert.alert(
-        t('screens.settingsMain.pinRequiredTitle'),
-        t('screens.settingsMain.pinRequiredMessage'),
-        [{ text: t('screens.settingsMain.goToGeneral'), onPress: () => setActiveTab('general') }],
-      );
-      return;
     }
 
     // Inactivity delay validation
@@ -1545,6 +1534,10 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation, route })
       // Reset mode change tracking after successful password save
       setInitialPinMode(pinMode);
       setPinModeChanged(false);
+    } else if (!isPinConfigured) {
+      await saveSecurePin('1234');
+      await StorageService.savePin('');
+      setIsPinConfigured(true);
     }
 
     await StorageService.savePinMaxAttempts(pinMaxAttemptsNumber);
@@ -1823,6 +1816,10 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation, route })
       Alert.alert(t('screens.settingsMain.success'), message, [
         { text: t('screens.settingsMain.ok'), onPress: () => { revokeSettingsAccess(); navigation.reset({ index: 0, routes: [{ name: 'Kiosk' }] }); } },
       ]);
+    }
+    } catch (saveError: any) {
+      console.error('[Settings] Error saving settings:', saveError);
+      Alert.alert(t('screens.settingsMain.error'), 'Gagal menyimpan pengaturan: ' + (saveError?.message || saveError));
     }
   };
 

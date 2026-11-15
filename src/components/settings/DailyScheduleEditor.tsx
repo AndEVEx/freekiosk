@@ -20,7 +20,16 @@ const DailyScheduleEditor: React.FC<DailyScheduleEditorProps> = ({
   schedules,
   onChange,
 }) => {
-  const currentSchedules = schedules && schedules.length === 7 ? schedules : DEFAULT_DAY_SCHEDULES;
+  const currentSchedules = (schedules && schedules.length === 7 ? schedules : DEFAULT_DAY_SCHEDULES).map(item => {
+    const def = DEFAULT_DAY_SCHEDULES.find(d => d.day === item.day) || item;
+    return {
+      ...def,
+      ...item,
+      enableSession2: item.enableSession2 ?? def.enableSession2 ?? false,
+      onTime2: item.onTime2 || def.onTime2 || '14:45',
+      offTime2: item.offTime2 || def.offTime2 || '17:00',
+    };
+  });
 
   const handleUpdateDay = (dayIndex: number, updates: Partial<DaySchedule>) => {
     const updated = currentSchedules.map(item => {

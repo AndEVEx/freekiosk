@@ -104,11 +104,11 @@ const SecurityTab: React.FC<SecurityTabProps> = ({
           label={isPinConfigured ? "Ganti PIN Pengaturan" : "Atur PIN Pengaturan"}
           value={pin}
           onChangeText={onPinChange}
-          placeholder="4 digit angka"
+          placeholder={isPinConfigured ? "PIN tersimpan aktif (ketik baru jika ingin ganti)" : "Default: 1234 (ketik 4 digit baru)"}
           secureTextEntry={true}
           keyboardType="numeric"
           maxLength={4}
-          hint="PIN untuk mengakses halaman pengaturan agar tidak diubah sembarang orang."
+          hint={isPinConfigured ? "PIN saat ini sudah tersimpan dan aktif. Biarkan kosong jika tidak ingin mengubah PIN." : "PIN untuk membuka menu pengaturan tablet (default: 1234)."}
         />
       </SettingsSection>
 
