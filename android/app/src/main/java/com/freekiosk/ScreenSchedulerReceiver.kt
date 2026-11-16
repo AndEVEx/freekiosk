@@ -57,7 +57,23 @@ class ScreenSchedulerReceiver : BroadcastReceiver() {
             wakeLock.acquire(WAKE_LOCK_TIMEOUT)
             Log.d(TAG, "WakeLock acquired — screen should be turning on")
 
-            // 2. Dismiss keyguard / show over lock screen on the activity
+            // 2. Explicitly launch or bring MainActivity to foreground
+            try {
+                val launchIntent = Intent(context, MainActivity::class.java).apply {
+                    addFlags(
+                        Intent.FLAG_ACTIVITY_NEW_TASK or
+                        Intent.FLAG_ACTIVITY_SINGLE_TOP or
+                        Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                    )
+                    putExtra("from_screen_scheduler_wake", true)
+                }
+                context.startActivity(launchIntent)
+                Log.d(TAG, "MainActivity startActivity called for scheduled wake")
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to start MainActivity on scheduled wake: ${e.message}", e)
+            }
+
+            // 3. Dismiss keyguard / show over lock screen on the activity
             //    This is needed if the user has a PIN/pattern lock.
             try {
                 val app = context.applicationContext as? android.app.Application
@@ -104,14 +120,14 @@ class ScreenSchedulerReceiver : BroadcastReceiver() {
                             }
                         }
                     } else {
-                        Log.w(TAG, "No current activity available — WakeLock alone will handle wake")
+                        Log.d(TAG, "Activity not yet running in memory — launched via Intent above")
                     }
                 }
             } catch (e: Exception) {
                 Log.w(TAG, "Could not access activity for flags: ${e.message}")
             }
 
-            // 3. Send event to JS via KioskModule's static method
+            // 4. Send event to JS via KioskModule's static method
             KioskModule.sendEventFromNative("onScheduledWake", null)
 
             Log.d(TAG, "Screen wake triggered successfully, JS event sent")

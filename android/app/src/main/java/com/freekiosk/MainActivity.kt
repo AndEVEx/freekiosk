@@ -262,6 +262,15 @@ class MainActivity : ReactActivity() {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
       setShowWhenLocked(true)
       setTurnScreenOn(true)
+      val km = getSystemService(Context.KEYGUARD_SERVICE) as? KeyguardManager
+      km?.requestDismissKeyguard(this, null)
+    } else {
+      @Suppress("DEPRECATION")
+      window.addFlags(
+        WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD or
+        WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
+        WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
+      )
     }
 
     // Extend content into display cutout areas to prevent OEM chrome from appearing (#94)
@@ -332,6 +341,13 @@ class MainActivity : ReactActivity() {
   override fun onNewIntent(intent: Intent?) {
     super.onNewIntent(intent)
     setIntent(intent) // Important: update the intent
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+      setShowWhenLocked(true)
+      setTurnScreenOn(true)
+      val km = getSystemService(Context.KEYGUARD_SERVICE) as? KeyguardManager
+      km?.requestDismissKeyguard(this, null)
+    }
     
     // Handle ADB config on new intent too (when app is already running)
     // If returns true, the app will restart and we should not continue
@@ -800,6 +816,22 @@ class MainActivity : ReactActivity() {
 
   override fun onResume() {
     super.onResume()
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+      setShowWhenLocked(true)
+      setTurnScreenOn(true)
+      val km = getSystemService(Context.KEYGUARD_SERVICE) as? KeyguardManager
+      km?.requestDismissKeyguard(this, null)
+    }
+
+    val prefs = getSharedPreferences("FreeKioskSettings", Context.MODE_PRIVATE)
+    if (prefs.getBoolean("keep_screen_on", true)) {
+      window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+    }
+    BrightnessPrefs.applyToWindow(this, window)
+
+    // Ensure watchdog/keepalive is alive if needed
+    startKioskWatchdogIfNeeded()
 
     cookieFlushHandler.removeCallbacks(cookieFlushRunnable)
     cookieFlushHandler.postDelayed(cookieFlushRunnable, COOKIE_FLUSH_INTERVAL_MS)

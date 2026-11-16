@@ -1165,7 +1165,18 @@ class KioskModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
                     }
                 }
             } else {
-                android.util.Log.w("KioskModule", "Activity is null after lockNow() — WakeLock alone will wake screen")
+                android.util.Log.w("KioskModule", "Activity is null after lockNow() — launching MainActivity")
+                try {
+                    val launchIntent = Intent(reactApplicationContext, MainActivity::class.java).apply {
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or
+                                 Intent.FLAG_ACTIVITY_SINGLE_TOP or
+                                 Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+                        putExtra("from_screen_scheduler_wake", true)
+                    }
+                    reactApplicationContext.startActivity(launchIntent)
+                } catch (e: Exception) {
+                    android.util.Log.e("KioskModule", "Failed to launch MainActivity on turnScreenOn: ${e.message}")
+                }
             }
             
             // Resolve immediately - WakeLock handles the wake even if activity is null
@@ -1549,13 +1560,30 @@ class KioskModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
             val showIntent = android.app.PendingIntent.getActivity(
                 context,
                 1003, // unique request code for the alarm-clock "show" intent
-                Intent(context, MainActivity::class.java),
-                android.app.PendingIntent.FLAG_IMMUTABLE
+                Intent(context, MainActivity::class.java).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+                },
+                android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
             )
-            alarmManager.setAlarmClock(
-                android.app.AlarmManager.AlarmClockInfo(wakeTimeMs.toLong(), showIntent),
-                pendingIntent
-            )
+            try {
+                alarmManager.setAlarmClock(
+                    android.app.AlarmManager.AlarmClockInfo(wakeTimeMs.toLong(), showIntent),
+                    pendingIntent
+                )
+            } catch (e: Exception) {
+                alarmManager.setAndAllowWhileIdle(
+                    android.app.AlarmManager.RTC_WAKEUP,
+                    wakeTimeMs.toLong(),
+                    pendingIntent
+                )
+            }
+
+            // Ensure keep-alive service is active to protect process from low memory killer
+            try {
+                KioskWatchdogService.startKeepAliveIfNeeded(context)
+            } catch (e: Exception) {
+                android.util.Log.w("KioskModule", "Could not start keep-alive watchdog: ${e.message}")
+            }
 
             val calendar = java.util.Calendar.getInstance().apply { timeInMillis = wakeTimeMs.toLong() }
             val timeStr = String.format("%02d:%02d:%02d", 
@@ -1610,6 +1638,13 @@ class KioskModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
                     sleepTimeMs.toLong(),
                     pendingIntent
                 )
+            }
+
+            // Ensure keep-alive service is active to protect process from low memory killer
+            try {
+                KioskWatchdogService.startKeepAliveIfNeeded(context)
+            } catch (e: Exception) {
+                android.util.Log.w("KioskModule", "Could not start keep-alive watchdog: ${e.message}")
             }
 
             val calendar = java.util.Calendar.getInstance().apply { timeInMillis = sleepTimeMs.toLong() }

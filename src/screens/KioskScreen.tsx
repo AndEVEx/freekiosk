@@ -173,6 +173,7 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
   const [screenSchedulerDailySchedules, setScreenSchedulerDailySchedules] = useState<DaySchedule[]>(DEFAULT_DAY_SCHEDULES);
   const [screenSchedulerWakeOnTouch, setScreenSchedulerWakeOnTouch] = useState<boolean>(true);
   const [isScheduledSleep, setIsScheduledSleep] = useState<boolean>(false); // true when screen is OFF due to scheduler
+  const isScheduledSleepRef = useRef<boolean>(false);
   const screenSchedulerTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   
   // Keep Screen On setting
@@ -1577,18 +1578,14 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
     const wakeSubscription = DeviceEventEmitter.addListener('onScheduledWake', () => {
       setTimeout(() => {
         console.log('[ScreenScheduler] Native WAKE alarm received');
-        if (isScheduledSleepRef.current) {
-          exitScheduledSleep();
-        }
+        exitScheduledSleep();
       }, 0);
     });
 
     const sleepSubscription = DeviceEventEmitter.addListener('onScheduledSleep', () => {
       setTimeout(() => {
         console.log('[ScreenScheduler] Native SLEEP alarm received');
-        if (!isScheduledSleepRef.current) {
-          enterScheduledSleep();
-        }
+        enterScheduledSleep();
       }, 0);
     });
 
@@ -1633,6 +1630,8 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
         enterScheduledSleep();
       } else if (!shouldSleep && isScheduledSleepRef.current) {
         exitScheduledSleep();
+      } else if (!shouldSleep && !isScheduledSleepRef.current) {
+        scheduleNativeSleepAlarm();
       }
     };
 
@@ -1650,7 +1649,7 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
         screenSchedulerTimerRef.current = null;
       }
     };
-  }, [screenSchedulerEnabled, screenSchedulerRules, enterScheduledSleep, exitScheduledSleep]);
+  }, [screenSchedulerEnabled, screenSchedulerDailySchedules, screenSchedulerRules, enterScheduledSleep, exitScheduledSleep, scheduleNativeSleepAlarm]);
 
 
   useEffect(() => {
@@ -2604,8 +2603,7 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
     isPreCheckingMotionRef.current = isPreCheckingMotion;
   }, [isPreCheckingMotion]);
 
-  // Ref to track scheduled sleep state for callbacks
-  const isScheduledSleepRef = useRef(isScheduledSleep);
+  // Sync scheduled sleep state ref for callbacks
   useEffect(() => {
     isScheduledSleepRef.current = isScheduledSleep;
   }, [isScheduledSleep]);

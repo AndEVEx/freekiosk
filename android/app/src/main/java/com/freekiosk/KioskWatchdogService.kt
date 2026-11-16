@@ -92,7 +92,9 @@ class KioskWatchdogService : Service() {
 
         /** True when something in the app needs the process alive while backgrounded. */
         private fun needsKeepAlive(context: Context): Boolean =
-            readFlag(context, "@kiosk_mqtt_enabled") || readFlag(context, "@cloud_enrolled")
+            readFlag(context, "@kiosk_mqtt_enabled") ||
+            readFlag(context, "@cloud_enrolled") ||
+            readFlag(context, "@kiosk_screen_scheduler_enabled")
 
         private fun start(context: Context, keepAliveOnly: Boolean) {
             try {
