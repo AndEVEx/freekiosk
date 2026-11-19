@@ -73,6 +73,7 @@ const TABS: { id: string; label: string; icon: IconName }[] = [
   { id: 'general', label: 'Situs & URL', icon: 'web' },
   { id: 'display', label: 'Jadwal Tablet', icon: 'clock-outline' },
   { id: 'security', label: 'Keamanan & PIN', icon: 'shield-lock' },
+  { id: 'advanced', label: 'Lanjutan & Cadangan', icon: 'cog' },
 ];
 
 const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation, route }) => {
@@ -151,7 +152,7 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation, route })
   const [allowNotifications, setAllowNotifications] = useState<boolean>(false);
   const [allowSystemInfo, setAllowSystemInfo] = useState<boolean>(false);
   const [returnMode, setReturnMode] = useState<string>('tap_anywhere');
-  const [returnTapCount, setReturnTapCount] = useState<string>('5');
+  const [returnTapCount, setReturnTapCount] = useState<string>('4');
   const [returnTapTimeout, setReturnTapTimeout] = useState<string>('1500');
   const [returnButtonPosition, setReturnButtonPosition] = useState<string>('bottom-right');
   const [volumeUp5TapEnabled, setVolumeUp5TapEnabled] = useState<boolean>(true);

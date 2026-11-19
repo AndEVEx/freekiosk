@@ -4,13 +4,14 @@
  */
 
 import React from 'react';
-import { View, StyleSheet, Text } from 'react-native';
+import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import {
   SettingsSection,
   SettingsSwitch,
   SettingsInput,
   SettingsInfoBox,
 } from '../../../components/settings';
+import Icon from '../../../components/Icon';
 import { Colors, Spacing, Typography } from '../../../theme';
 
 export interface SecurityTabProps {
@@ -32,6 +33,10 @@ export interface SecurityTabProps {
   onPinChange?: (pin: string) => void;
   isPinConfigured?: boolean;
 
+  // Tap settings (PRIMARY)
+  returnTapCount?: string;
+  onReturnTapCountChange?: (value: string) => void;
+
   // Compatibility props retained to avoid breakage
   allowPowerButton?: boolean;
   onAllowPowerButtonChange?: (value: boolean) => void;
@@ -49,8 +54,6 @@ export interface SecurityTabProps {
   onAllowSystemInfoChange?: (value: boolean) => void;
   returnMode?: string;
   onReturnModeChange?: (value: string) => void;
-  returnTapCount?: string;
-  onReturnTapCountChange?: (value: string) => void;
   returnTapTimeout?: string;
   onReturnTapTimeoutChange?: (value: string) => void;
   returnButtonPosition?: string;
@@ -95,7 +98,11 @@ const SecurityTab: React.FC<SecurityTabProps> = ({
   pin = '',
   onPinChange = () => {},
   isPinConfigured = false,
+  returnTapCount = '4',
+  onReturnTapCountChange = () => {},
 }) => {
+  const currentTap = returnTapCount || '4';
+
   return (
     <View style={styles.container}>
       {/* 1. PIN Keamanan Pengaturan */}
@@ -120,7 +127,7 @@ const SecurityTab: React.FC<SecurityTabProps> = ({
         />
       </SettingsSection>
 
-      {/* 2. Mode Kiosk (Kunci Aplikasi) */}
+      {/* 2. Mode Kiosk (Kunci Aplikasi) & Buka Pengaturan */}
       <SettingsSection title="Mode Kiosk (Kunci Aplikasi)" icon="shield-lock">
         <SettingsSwitch
           label="Kunci Aplikasi (Mode Kiosk)"
@@ -129,10 +136,51 @@ const SecurityTab: React.FC<SecurityTabProps> = ({
           onValueChange={onKioskEnabledChange}
         />
 
+        {/* Pilihan Jumlah Ketukan */}
+        <View style={{ marginTop: Spacing.md, marginBottom: Spacing.sm }}>
+          <Text style={styles.sectionSubLabel}>Jumlah Ketukan Layar Buka Pengaturan</Text>
+          <Text style={styles.subHint}>
+            Ketuk cepat di area kosong layar tablet untuk membuka jendela input PIN.
+          </Text>
+          <View style={{ flexDirection: 'row', gap: Spacing.sm, marginTop: Spacing.xs }}>
+            <TouchableOpacity
+              style={[
+                styles.tapChoiceBtn,
+                currentTap === '4' && styles.tapChoiceBtnActive
+              ]}
+              onPress={() => onReturnTapCountChange('4')}
+              activeOpacity={0.7}
+            >
+              <Text style={[
+                styles.tapChoiceText,
+                currentTap === '4' && styles.tapChoiceTextActive
+              ]}>
+                ✓ 4x Ketuk (Standar)
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.tapChoiceBtn,
+                currentTap === '5' && styles.tapChoiceBtnActive
+              ]}
+              onPress={() => onReturnTapCountChange('5')}
+              activeOpacity={0.7}
+            >
+              <Text style={[
+                styles.tapChoiceText,
+                currentTap === '5' && styles.tapChoiceTextActive
+              ]}>
+                5x Ketuk
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
         <SettingsInfoBox variant="info">
           <Text style={styles.infoTitle}>Cara Membuka Menu Pengaturan:</Text>
           <Text style={styles.infoText}>
-            Saat aplikasi sedang berjalan di layar penuh, ketuk layar secara cepat sebanyak 5 kali berturut-turut untuk memunculkan jendela input PIN.
+            Saat aplikasi sedang berjalan di layar penuh, ketuk layar secara cepat sebanyak {currentTap} kali berturut-turut di area kosong untuk memunculkan jendela input PIN.
           </Text>
         </SettingsInfoBox>
       </SettingsSection>
@@ -153,6 +201,40 @@ const SecurityTab: React.FC<SecurityTabProps> = ({
 const styles = StyleSheet.create({
   container: {
     paddingBottom: Spacing.xl,
+  },
+  sectionSubLabel: {
+    ...Typography.body,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+  },
+  subHint: {
+    ...Typography.caption,
+    color: Colors.textSecondary,
+    marginBottom: Spacing.xs,
+  },
+  tapChoiceBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+    backgroundColor: Colors.surfaceVariant,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tapChoiceBtnActive: {
+    backgroundColor: '#E8F5E9',
+    borderColor: Colors.primary,
+  },
+  tapChoiceText: {
+    ...Typography.body,
+    fontWeight: '600',
+    color: Colors.textSecondary,
+  },
+  tapChoiceTextActive: {
+    color: Colors.primary,
+    fontWeight: '700',
   },
   infoTitle: {
     ...Typography.label,

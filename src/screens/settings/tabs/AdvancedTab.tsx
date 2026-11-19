@@ -315,11 +315,13 @@ const AdvancedTab: React.FC<AdvancedTabProps> = ({
               disabled={enrolling}
               loading={enrolling}
             />
-            <QrScannerModal
-              visible={showScanner}
-              onClose={() => setShowScanner(false)}
-              onScanned={handleScanned}
-            />
+            {showScanner && (
+              <QrScannerModal
+                visible={showScanner}
+                onClose={() => setShowScanner(false)}
+                onScanned={handleScanned}
+              />
+            )}
           </>
         )}
       </SettingsSection>}

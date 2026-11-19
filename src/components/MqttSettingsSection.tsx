@@ -10,7 +10,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   Alert,
-  Clipboard,
   ActivityIndicator,
   PermissionsAndroid,
 } from 'react-native';

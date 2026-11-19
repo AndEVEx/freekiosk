@@ -129,13 +129,13 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
   // Spatial proximity detection for N-tap (WebView mode)
   const firstTapXRef = useRef<number>(0);
   const firstTapYRef = useRef<number>(0);
-  const TAP_PROXIMITY_RADIUS = 80; // Taps must be within 80px of first tap
+  const TAP_PROXIMITY_RADIUS = 140; // Taps within 140px of first tap (tablet-friendly)
   
   // Return button settings (WebView + Multi-app grid mode)
   // WebView: N-tap detection via onUserInteraction callback
   // Multi-app grid: N-tap detection handled directly by ExternalAppOverlay
   const [returnButtonVisible, setReturnButtonVisible] = useState<boolean>(false);
-  const [returnTapCount, setReturnTapCount] = useState<number>(5);
+  const [returnTapCount, setReturnTapCount] = useState<number>(4);
   const [returnTapTimeout, setReturnTapTimeout] = useState<number>(1500);
   const [returnMode, setReturnMode] = useState<string>('tap_anywhere');
   const [returnButtonPosition, setReturnButtonPosition] = useState<string>('bottom-right');
@@ -1963,7 +1963,7 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
       // WebView when the key was never explicitly saved, e.g. after an /api/mode switch from
       // external_app to webview (#209 tester report) even though Settings showed it as off.
       const savedReturnButtonVisible = bool(K.OVERLAY_BUTTON_VISIBLE, false);
-      const savedReturnTapCount = num(K.RETURN_TAP_COUNT, 5);
+      const savedReturnTapCount = num(K.RETURN_TAP_COUNT, 4);
       const savedReturnTapTimeout = num(K.RETURN_TAP_TIMEOUT, 1500);
       const savedReturnMode = str(K.RETURN_MODE) ?? 'tap_anywhere';
       const savedReturnButtonPosition = str(K.RETURN_BUTTON_POSITION) ?? 'bottom-right';
@@ -2690,8 +2690,9 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
         const distance = Math.sqrt(dx * dx + dy * dy);
         
         if (distance <= TAP_PROXIMITY_RADIUS) {
-          // Within proximity, count the tap
+          // Within proximity, count the tap and refresh timestamp
           tapCountRef.current += 1;
+          lastTapTimeRef.current = now;
           console.log(`[${returnTapCount}-tap] Count: ${tapCountRef.current}/${returnTapCount} at (${tapX.toFixed(0)}, ${tapY.toFixed(0)}) - distance: ${distance.toFixed(0)}px ✓`);
         } else {
           // Too far from first tap - reset and start new sequence
@@ -2709,6 +2710,7 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
         tapCountRef.current = 0;
         if (tapTimerRef.current) {
           clearTimeout(tapTimerRef.current);
+          tapTimerRef.current = null;
         }
         clearTimer();
         setIsScreensaverActive(false);
@@ -2724,16 +2726,15 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
         return;
       }
       
-      // Timeout global : reset si plus de returnTapTimeout depuis le premier tap
+      // Timeout global : reset jika tidak ada ketukan baru setelah timeout
       if (tapTimerRef.current) {
         clearTimeout(tapTimerRef.current);
       }
       
       tapTimerRef.current = setTimeout(() => {
-        const elapsed = Date.now() - lastTapTimeRef.current;
-        console.log(`[${returnTapCount}-tap] ⏱ Timeout - ${elapsed}ms elapsed, resetting count`);
+        console.log(`[${returnTapCount}-tap] ⏱ Timeout - resetting tap count`);
         tapCountRef.current = 0;
-      }, returnTapTimeout - (now - lastTapTimeRef.current));
+      }, Math.max(1500, returnTapTimeout));
     }
   }, [displayMode, navigation, resetTimer, clearTimer, markUserInteraction, returnTapCount, returnTapTimeout, defaultBrightness, TAP_PROXIMITY_RADIUS, exitScheduledSleep]);
 

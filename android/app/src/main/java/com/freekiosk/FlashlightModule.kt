@@ -86,14 +86,26 @@ class FlashlightModule(private val reactContext: ReactApplicationContext) :
     }
 
     private fun findTorchCameraId(): String? {
-        return cameraManager.cameraIdList.firstOrNull { cameraId ->
-            val characteristics = cameraManager.getCameraCharacteristics(cameraId)
-            val hasFlash = characteristics.get(CameraCharacteristics.FLASH_INFO_AVAILABLE) == true
-            val facing = characteristics.get(CameraCharacteristics.LENS_FACING)
-            hasFlash && facing == CameraCharacteristics.LENS_FACING_BACK
-        } ?: cameraManager.cameraIdList.firstOrNull { cameraId ->
-            val characteristics = cameraManager.getCameraCharacteristics(cameraId)
-            characteristics.get(CameraCharacteristics.FLASH_INFO_AVAILABLE) == true
+        return try {
+            cameraManager.cameraIdList.firstOrNull { cameraId ->
+                try {
+                    val characteristics = cameraManager.getCameraCharacteristics(cameraId)
+                    val hasFlash = characteristics.get(CameraCharacteristics.FLASH_INFO_AVAILABLE) == true
+                    val facing = characteristics.get(CameraCharacteristics.LENS_FACING)
+                    hasFlash && facing == CameraCharacteristics.LENS_FACING_BACK
+                } catch (e: Exception) {
+                    false
+                }
+            } ?: cameraManager.cameraIdList.firstOrNull { cameraId ->
+                try {
+                    val characteristics = cameraManager.getCameraCharacteristics(cameraId)
+                    characteristics.get(CameraCharacteristics.FLASH_INFO_AVAILABLE) == true
+                } catch (e: Exception) {
+                    false
+                }
+            }
+        } catch (e: Exception) {
+            null
         }
     }
 }

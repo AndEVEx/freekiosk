@@ -296,7 +296,11 @@ export const ApiSettingsSection: React.FC<ApiSettingsSectionProps> = ({
   };
 
   const copyToClipboard = (text: string, label: string) => {
-    Clipboard.setString(text);
+    try {
+      if (Clipboard && typeof (Clipboard as any).setString === 'function') {
+        (Clipboard as any).setString(text);
+      }
+    } catch {}
     Alert.alert(t('components.apiSettings.copied'), t('components.apiSettings.copiedMessage', { label }));
   };
 
