@@ -9,6 +9,7 @@ import {
   SettingsSection,
   SettingsSwitch,
   SettingsSlider,
+  SettingsInfoBox,
 } from '../../../components/settings';
 import DailyScheduleEditor from '../../../components/settings/DailyScheduleEditor';
 import { ScreenScheduleRule, DaySchedule } from '../../../types/screenScheduler';
@@ -127,6 +128,10 @@ const DisplayTab: React.FC<DisplayTabProps> = ({
   onDailySchedulesChange = () => {},
   screenSchedulerWakeOnTouch,
   onScreenSchedulerWakeOnTouchChange,
+  keepScreenOn = true,
+  onKeepScreenOnChange = () => {},
+  autoWakeOnScreenOff = false,
+  onAutoWakeOnScreenOffChange = () => {},
 }) => {
   return (
     <View style={styles.container}>
@@ -164,7 +169,38 @@ const DisplayTab: React.FC<DisplayTabProps> = ({
         )}
       </SettingsSection>
 
-      {/* 2. Kecerahan Layar */}
+      {/* 2. Batas Waktu Layar (Screen Timeout) */}
+      <SettingsSection title="Batas Waktu Layar (Screen Timeout)" icon="monitor">
+        <SettingsSwitch
+          label="Biarkan Layar Tetap Menyala (Keep Screen On)"
+          hint={keepScreenOn
+            ? "Layar tablet akan selalu menyala terus selama jam operasional (standar kiosk)."
+            : "Mengikuti batas waktu layar tablet Android (layar mati otomatis setelah tidak disentuh sesuai pengaturan Android)."}
+          value={keepScreenOn}
+          onValueChange={onKeepScreenOnChange}
+        />
+
+        {!keepScreenOn && (
+          <SettingsInfoBox variant="warning">
+            <Text style={styles.infoTitle}>Mengikuti Pengaturan Bawaan Tablet:</Text>
+            <Text style={styles.infoText}>
+              Layar akan mati otomatis mengikuti durasi Screen Timeout Android (misal 30 detik atau 1 menit).
+              Atur durasi waktu tunggu di menu Pengaturan Tablet Android → Tampilan → Batas Waktu Layar (Screen Timeout).
+            </Text>
+          </SettingsInfoBox>
+        )}
+
+        <SettingsSwitch
+          label="Otomatis Nyalakan Layar saat Layar Mati"
+          hint={autoWakeOnScreenOff
+            ? "Layar akan langsung menyala kembali jika mati (misal jika tombol power ditekan tidak sengaja)."
+            : "Layar tetap mati jika dimatikan tombol power atau sistem."}
+          value={autoWakeOnScreenOff}
+          onValueChange={onAutoWakeOnScreenOffChange}
+        />
+      </SettingsSection>
+
+      {/* 3. Kecerahan Layar */}
       <SettingsSection title="Kecerahan Layar" icon="brightness-6">
         <SettingsSlider
           label="Tingkat Kecerahan"
@@ -202,6 +238,17 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     marginBottom: Spacing.md,
     lineHeight: 18,
+  },
+  infoTitle: {
+    ...Typography.label,
+    fontWeight: '700',
+    color: Colors.warningDark,
+    marginBottom: Spacing.xs,
+  },
+  infoText: {
+    ...Typography.body,
+    lineHeight: 20,
+    color: Colors.textSecondary,
   },
 });
 
