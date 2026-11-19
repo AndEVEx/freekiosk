@@ -1508,10 +1508,10 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation, route })
     }
 
     // Inactivity delay validation
-    const inactivityDelayNumber = parseInt(inactivityDelay, 10);
+    let inactivityDelayNumber = parseInt(inactivityDelay, 10);
     if (isNaN(inactivityDelayNumber) || inactivityDelayNumber <= 0) {
-      Alert.alert(t('screens.settingsMain.error'), t('screens.settingsMain.enterValidInactivityDelay'));
-      return;
+      inactivityDelayNumber = 10;
+      setInactivityDelay('10');
     }
 
     // PIN max attempts validation
@@ -2440,7 +2440,16 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation, route })
 
       {/* Header */}
       <View style={settingsStyles.header}>
-        <Text style={settingsStyles.headerTitle}>{t('screens.settingsMain.title')}</Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Text style={settingsStyles.headerTitle}>{t('screens.settingsMain.title')}</Text>
+          <TouchableOpacity
+            style={[styles.saveButton, { paddingVertical: 8, paddingHorizontal: 16, minHeight: 40, marginTop: 0 }]}
+            onPress={handleSave}
+          >
+            <Icon name="content-save" size={18} color={Colors.textOnPrimary} style={{ marginRight: 6 }} />
+            <Text style={[styles.saveButtonText, { fontSize: 14 }]}>{t('screens.settingsMain.save')}</Text>
+          </TouchableOpacity>
+        </View>
         
         {/* Device Owner Badge */}
         <View style={[
@@ -2499,13 +2508,11 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation, route })
       >
         {renderTab()}
         
-        {/* Save Button - Always visible */}
-        {activeTab !== 'advanced' && (
-          <TouchableOpacity style={[styles.saveButton, styles.saveButtonRow]} onPress={handleSave}>
-            <Icon name="content-save" size={20} color={Colors.textOnPrimary} style={styles.saveButtonIcon} />
-            <Text style={styles.saveButtonText}>{t('screens.settingsMain.save')}</Text>
-          </TouchableOpacity>
-        )}
+        {/* Save Button - Always visible on all tabs */}
+        <TouchableOpacity style={[styles.saveButton, styles.saveButtonRow]} onPress={handleSave}>
+          <Icon name="content-save" size={20} color={Colors.textOnPrimary} style={styles.saveButtonIcon} />
+          <Text style={styles.saveButtonText}>{t('screens.settingsMain.save')}</Text>
+        </TouchableOpacity>
       </ScrollView>
 
       {/* App Picker Modal */}

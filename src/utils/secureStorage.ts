@@ -12,6 +12,7 @@ const MQTT_PASSWORD_SERVICE = 'freekiosk_mqtt_password';
 const WIFI_PASSWORD_SERVICE_PREFIX = 'freekiosk_wifi_password:';
 const BASIC_AUTH_PASSWORD_SERVICE = 'freekiosk_basic_auth_password';
 const WEB_FORM_LOGIN_PASSWORD_SERVICE = 'damay_kiosk_form_login_password';
+const WEB_FORM_LOGIN_PASSWORD_FALLBACK_KEY = '@kiosk_form_login_password';
 const CLOUD_CREDENTIALS_SERVICE = 'freekiosk_cloud';
 const LEGACY_API_KEY = '@kiosk_rest_api_key'; // Legacy AsyncStorage key for migration
 const ATTEMPTS_KEY = '@kiosk_pin_attempts';
@@ -883,10 +884,21 @@ export async function saveSecureFormLoginPassword(password: string): Promise<boo
       await clearSecureFormLoginPassword();
       return true;
     }
-    await Keychain.setGenericPassword('form_login_password', password, {
-      service: WEB_FORM_LOGIN_PASSWORD_SERVICE,
-      accessible: Keychain.ACCESSIBLE.WHEN_UNLOCKED,
-    });
+    // Always persist to AsyncStorage fallback first so kiosk tablets without Keystore retain it reliably
+    try {
+      await AsyncStorage.setItem(WEB_FORM_LOGIN_PASSWORD_FALLBACK_KEY, password);
+    } catch (fallbackError) {
+      console.warn('[SecureStorage] Error saving form login password to fallback:', fallbackError);
+    }
+
+    try {
+      await Keychain.setGenericPassword('form_login_password', password, {
+        service: WEB_FORM_LOGIN_PASSWORD_SERVICE,
+        accessible: Keychain.ACCESSIBLE.WHEN_UNLOCKED,
+      });
+    } catch (keychainError) {
+      console.warn('[SecureStorage] Keychain setGenericPassword failed, relying on fallback:', keychainError);
+    }
     return true;
   } catch (error) {
     console.error('[SecureStorage] Error saving form login password:', error);
@@ -896,8 +908,17 @@ export async function saveSecureFormLoginPassword(password: string): Promise<boo
 
 export async function getSecureFormLoginPassword(): Promise<string> {
   try {
-    const credentials = await Keychain.getGenericPassword({ service: WEB_FORM_LOGIN_PASSWORD_SERVICE });
-    return credentials ? credentials.password : '';
+    try {
+      const credentials = await Keychain.getGenericPassword({ service: WEB_FORM_LOGIN_PASSWORD_SERVICE });
+      if (credentials && credentials.password) {
+        return credentials.password;
+      }
+    } catch (keychainError) {
+      console.warn('[SecureStorage] Keychain getGenericPassword failed, checking fallback:', keychainError);
+    }
+    // Fallback to AsyncStorage
+    const fallback = await AsyncStorage.getItem(WEB_FORM_LOGIN_PASSWORD_FALLBACK_KEY);
+    return fallback ?? '';
   } catch (error) {
     console.error('[SecureStorage] Error getting form login password:', error);
     return '';
@@ -906,7 +927,10 @@ export async function getSecureFormLoginPassword(): Promise<string> {
 
 export async function clearSecureFormLoginPassword(): Promise<void> {
   try {
-    await Keychain.resetGenericPassword({ service: WEB_FORM_LOGIN_PASSWORD_SERVICE });
+    try {
+      await Keychain.resetGenericPassword({ service: WEB_FORM_LOGIN_PASSWORD_SERVICE });
+    } catch {}
+    await AsyncStorage.removeItem(WEB_FORM_LOGIN_PASSWORD_FALLBACK_KEY);
   } catch (error) {
     console.error('[SecureStorage] Error clearing form login password:', error);
   }

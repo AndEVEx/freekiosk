@@ -100,6 +100,14 @@ const SecurityTab: React.FC<SecurityTabProps> = ({
     <View style={styles.container}>
       {/* 1. PIN Keamanan Pengaturan */}
       <SettingsSection title="PIN Keamanan Pengaturan" icon="pin">
+        {isPinConfigured && (
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: Spacing.sm }}>
+            <Icon name="check-circle" size={18} color={Colors.successDark} style={{ marginRight: 6 }} />
+            <Text style={{ ...Typography.caption, color: Colors.successDark, fontWeight: '700' }}>
+              PIN Pengaturan Aktif & Tersimpan (4 Digit)
+            </Text>
+          </View>
+        )}
         <SettingsInput
           label={isPinConfigured ? "Ganti PIN Pengaturan" : "Atur PIN Pengaturan"}
           value={pin}

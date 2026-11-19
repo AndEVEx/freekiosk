@@ -427,22 +427,33 @@ class MainActivity : ReactActivity() {
   }
 
   private fun requestCameraPermission() {
+    val needed = mutableListOf<String>()
     if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
-        == PackageManager.PERMISSION_GRANTED) return
+        != PackageManager.PERMISSION_GRANTED) {
+      needed.add(Manifest.permission.CAMERA)
+    }
+    if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
+        != PackageManager.PERMISSION_GRANTED) {
+      needed.add(Manifest.permission.RECORD_AUDIO)
+    }
+
+    if (needed.isEmpty()) return
 
     // Device Owner can grant silently (consistent with location/bluetooth/wifi
     // above); otherwise fall back to the runtime prompt.
     if (devicePolicyManager.isDeviceOwnerApp(packageName)) {
-      try {
-        devicePolicyManager.setPermissionGrantState(
-          adminComponent,
-          packageName,
-          Manifest.permission.CAMERA,
-          DevicePolicyManager.PERMISSION_GRANT_STATE_GRANTED
-        )
-      } catch (_: Exception) {}
+      needed.forEach { perm ->
+        try {
+          devicePolicyManager.setPermissionGrantState(
+            adminComponent,
+            packageName,
+            perm,
+            DevicePolicyManager.PERMISSION_GRANT_STATE_GRANTED
+          )
+        } catch (_: Exception) {}
+      }
     } else {
-      ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA), 1002)
+      ActivityCompat.requestPermissions(this, needed.toTypedArray(), 1002)
     }
   }
 

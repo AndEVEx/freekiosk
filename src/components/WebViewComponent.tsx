@@ -89,7 +89,8 @@ export interface WebViewComponentRef {
 // #177 — Pause any HTML5 media playing in the page. Injected on pause as a reliable
 // complement to the native WebView.onPause() (which alone doesn't stop <audio> on every
 // OEM WebView). Ends with `true;` to silence react-native-webview's injection warning.
-const MEDIA_PAUSE_JS = `(function(){try{document.querySelectorAll('audio,video').forEach(function(m){try{m.pause();}catch(e){}});}catch(e){}})();true;`;
+const MEDIA_PAUSE_JS = `(function(){try{document.querySelectorAll('audio').forEach(function(m){try{m.pause();}catch(e){}});document.querySelectorAll('video').forEach(function(m){if(!m.srcObject){try{m.pause();}catch(e){}}});}catch(e){}})();true;`;
+const MEDIA_RESUME_JS = `(function(){try{document.querySelectorAll('video').forEach(function(m){if(m.srcObject || m.autoplay){try{m.play();}catch(e){}}});}catch(e){}})();true;`;
 
 // Only has to be unguessable to the page, which cannot observe this generator.
 const makePrinterNonce = (): string =>
@@ -307,6 +308,7 @@ const WebViewComponent = forwardRef<WebViewComponentRef, WebViewComponentProps>(
     resumeMedia: () => {
       const wv = webViewRef.current;
       if (!wv) return;
+      wv.injectJavaScript(MEDIA_RESUME_JS);
       try {
         const node = findNodeHandle(containerViewRef.current);
         if (node != null) {

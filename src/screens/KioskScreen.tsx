@@ -1548,6 +1548,10 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
     try {
       await KioskModule.turnScreenOn();
       console.log('[ScreenScheduler] Screen turned ON via native module');
+      if (displayMode === 'webview' && webViewRef.current) {
+        console.log('[ScreenScheduler] Refreshing WebView on wake from sleep');
+        webViewRef.current.reload();
+      }
       if (brightnessManagementRef.current) {
         if (autoBrightnessEnabled) {
           await AutoBrightnessModule.startAutoBrightness(autoBrightnessMin, autoBrightnessMax, autoBrightnessInterval, autoBrightnessOffset);

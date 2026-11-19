@@ -6,7 +6,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform, PermissionsAndroid, Alert } from 'react-native';
 import RNFS from 'react-native-fs';
-import { hasSecurePin, getSecureApiKey, saveSecureApiKey, getSecureMqttPassword, saveSecureMqttPassword } from './secureStorage';
+import { hasSecurePin, getSecureApiKey, saveSecureApiKey, getSecureMqttPassword, saveSecureMqttPassword, getSecureFormLoginPassword, saveSecureFormLoginPassword } from './secureStorage';
 
 // All storage keys to backup
 const BACKUP_KEYS = [
@@ -93,7 +93,13 @@ const BACKUP_KEYS = [
   // Screen Sleep Scheduler
   '@kiosk_screen_scheduler_enabled',
   '@kiosk_screen_scheduler_rules',
+  '@kiosk_screen_scheduler_daily_schedules',
   '@kiosk_screen_scheduler_wake_on_touch',
+  // Web Form Auto Login (Cpanel)
+  '@kiosk_form_login_enabled',
+  '@kiosk_form_login_username',
+  '@kiosk_form_login_tapel',
+  '@kiosk_form_login_password',
   // Keep Screen On
   '@kiosk_keep_screen_on',
   // Inactivity Return to Home
@@ -315,6 +321,13 @@ export async function buildBackupJson(): Promise<{ success: boolean; json?: stri
       console.warn('Failed to read MQTT password from secure storage:', e);
     }
 
+    try {
+      const formLoginPassword = await getSecureFormLoginPassword();
+      if (formLoginPassword) settings['@kiosk_form_login_password'] = formLoginPassword;
+    } catch (e) {
+      console.warn('Failed to read form login password from secure storage:', e);
+    }
+
     const hasPinConfigured = await hasSecurePin();
 
     const backupData: BackupData = {
@@ -459,6 +472,9 @@ export async function importBackup(filePath: string): Promise<{ success: boolean
           } else if (key === '@kiosk_mqtt_password') {
             await saveSecureMqttPassword(value);
             console.log('[BackupService] MQTT password imported to secure storage');
+          } else if (key === '@kiosk_form_login_password') {
+            await saveSecureFormLoginPassword(value);
+            console.log('[BackupService] Form login password imported to secure storage');
           } else {
             await AsyncStorage.setItem(key, value);
           }
@@ -513,6 +529,9 @@ export async function importBackupFromContent(jsonContent: string, fileName?: st
           } else if (key === '@kiosk_mqtt_password') {
             await saveSecureMqttPassword(value);
             console.log('[BackupService] MQTT password imported to secure storage');
+          } else if (key === '@kiosk_form_login_password') {
+            await saveSecureFormLoginPassword(value);
+            console.log('[BackupService] Form login password imported to secure storage');
           } else {
             await AsyncStorage.setItem(key, value);
           }

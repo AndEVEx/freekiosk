@@ -3765,6 +3765,11 @@ export const StorageService = {
           cache: bool(KEYS.MEDIA_PLAYER_CACHE, defaultMediaCacheEnabled()),
         },
         httpBasicAuth: { username: str(KEYS.HTTP_BASIC_AUTH_USERNAME) },
+        formLogin: {
+          enabled: bool(KEYS.FORM_LOGIN_ENABLED),
+          username: str(KEYS.FORM_LOGIN_USERNAME),
+          tapel: str(KEYS.FORM_LOGIN_TAPEL, '2026/2027'),
+        },
         externalApp: {
           package: str(KEYS.EXTERNAL_APP_PACKAGE),
           mode: str(KEYS.EXTERNAL_APP_MODE, 'single'),
@@ -3833,6 +3838,7 @@ export const StorageService = {
         screenScheduler: {
           enabled: bool(KEYS.SCREEN_SCHEDULER_ENABLED),
           rules: json(KEYS.SCREEN_SCHEDULER_RULES, []),
+          dailySchedules: json(KEYS.SCREEN_SCHEDULER_DAILY_SCHEDULES, DEFAULT_DAY_SCHEDULES),
           wakeOnTouch: bool(KEYS.SCREEN_SCHEDULER_WAKE_ON_TOUCH, true),
         },
         keepScreenOn: bool(KEYS.KEEP_SCREEN_ON, true),
@@ -4012,6 +4018,12 @@ export const StorageService = {
       }
       const hba = g.httpBasicAuth as Record<string, unknown> | undefined;
       if (hba) set(KEYS.HTTP_BASIC_AUTH_USERNAME, hba.username);
+      const fl = g.formLogin as Record<string, unknown> | undefined;
+      if (fl) {
+        set(KEYS.FORM_LOGIN_ENABLED, fl.enabled);
+        set(KEYS.FORM_LOGIN_USERNAME, fl.username);
+        set(KEYS.FORM_LOGIN_TAPEL, fl.tapel);
+      }
       const ea = g.externalApp as Record<string, unknown> | undefined;
       if (ea) {
         set(KEYS.EXTERNAL_APP_PACKAGE, ea.package);
@@ -4094,6 +4106,9 @@ export const StorageService = {
       if (sch) {
         set(KEYS.SCREEN_SCHEDULER_ENABLED, sch.enabled);
         set(KEYS.SCREEN_SCHEDULER_RULES, sch.rules);
+        if (sch.dailySchedules !== undefined) {
+          set(KEYS.SCREEN_SCHEDULER_DAILY_SCHEDULES, sch.dailySchedules);
+        }
         set(KEYS.SCREEN_SCHEDULER_WAKE_ON_TOUCH, sch.wakeOnTouch);
       }
       set(KEYS.KEEP_SCREEN_ON, d.keepScreenOn);
