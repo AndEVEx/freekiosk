@@ -137,7 +137,7 @@ class ScreenSchedulerReceiver : BroadcastReceiver() {
     }
 
     private fun handleSleep(context: Context) {
-        Log.d(TAG, "⏰ Scheduled SLEEP alarm fired — turning screen OFF")
+        Log.d(TAG, "⏰ Scheduled SLEEP alarm fired — dimming screen")
         try {
             // Dismiss soft keyboard if open
             try {
@@ -146,23 +146,22 @@ class ScreenSchedulerReceiver : BroadcastReceiver() {
                     val activity = reactApp.reactNativeHost.reactInstanceManager?.currentReactContext?.currentActivity
                     if (activity != null) {
                         KeyboardUtils.dismiss(activity)
+                        // Dim the screen instead of locking — keeps app in foreground/RAM
+                        activity.runOnUiThread {
+                            try {
+                                val layoutParams = activity.window.attributes
+                                layoutParams.screenBrightness = 0.001f
+                                activity.window.attributes = layoutParams
+                                activity.window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                                Log.d(TAG, "Screen dimmed to near-zero in receiver (app stays in RAM)")
+                            } catch (e: Exception) {
+                                Log.w(TAG, "Could not dim screen: ${e.message}")
+                            }
+                        }
                     }
                 }
             } catch (e: Exception) {
-                Log.w(TAG, "Could not dismiss keyboard: ${e.message}")
-            }
-
-            // Immediately turn screen off natively if Device Owner / Admin is active
-            try {
-                val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as? android.app.admin.DevicePolicyManager
-                val adminComponent = android.content.ComponentName(context, DeviceAdminReceiver::class.java)
-                if (dpm != null && (dpm.isDeviceOwnerApp(context.packageName) || dpm.isAdminActive(adminComponent))) {
-                    ScreenStateReceiver.markDeliberateScreenOff(context)
-                    dpm.lockNow()
-                    Log.d(TAG, "Screen turned OFF via lockNow() in receiver")
-                }
-            } catch (e: Exception) {
-                Log.w(TAG, "Could not lock screen directly: ${e.message}")
+                Log.w(TAG, "Could not dismiss keyboard / dim screen: ${e.message}")
             }
 
             // Send event to JS so the app can handle the sleep properly

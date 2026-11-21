@@ -1257,6 +1257,94 @@ class KioskModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
     }
 
     /**
+     * Dim screen for scheduled sleep — NEVER uses lockNow().
+     * Always dims brightness to near-zero while keeping the screen technically alive
+     * so the app stays in RAM, JS timers keep running, and wake is instant.
+     * Also acquires a PARTIAL_WAKE_LOCK to prevent CPU sleep.
+     */
+    @ReactMethod
+    fun dimScreenForScheduledSleep(promise: Promise) {
+        try {
+            val activity = reactApplicationContext.currentActivity
+            if (activity != null) {
+                activity.runOnUiThread {
+                    try {
+                        // Dim brightness to near-zero — screen appears black but app stays foreground
+                        val layoutParams = activity.window.attributes
+                        layoutParams.screenBrightness = 0.001f
+                        activity.window.attributes = layoutParams
+
+                        // Ensure FLAG_KEEP_SCREEN_ON is set so the screen doesn't actually turn off
+                        activity.window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+
+                        // Acquire a PARTIAL_WAKE_LOCK to keep CPU alive during scheduled sleep
+                        if (wakeLock?.isHeld != true) {
+                            val powerManager = reactApplicationContext.getSystemService(Context.POWER_SERVICE) as PowerManager
+                            wakeLock = powerManager.newWakeLock(
+                                PowerManager.PARTIAL_WAKE_LOCK,
+                                "FreeKiosk:ScheduledSleepCPU"
+                            )
+                            wakeLock?.acquire(12 * 60 * 60 * 1000L) // 12 hours max
+                        }
+
+                        android.util.Log.d("KioskModule", "Screen dimmed for scheduled sleep (brightness=0.001, keepScreenOn=true, wakeLock=acquired)")
+                        promise.resolve(true)
+                    } catch (e: Exception) {
+                        android.util.Log.e("KioskModule", "Failed to dim screen for scheduled sleep: ${e.message}")
+                        promise.reject("ERROR", "Failed to dim screen: ${e.message}")
+                    }
+                }
+            } else {
+                promise.reject("ERROR", "Activity not available")
+            }
+        } catch (e: Exception) {
+            promise.reject("ERROR", "Failed to dim screen: ${e.message}")
+        }
+    }
+
+    /**
+     * Restore screen brightness to maximum after scheduled sleep.
+     * Releases the sleep wake lock and restores full brightness.
+     */
+    @ReactMethod
+    fun restoreScreenFromScheduledSleep(promise: Promise) {
+        try {
+            val activity = reactApplicationContext.currentActivity
+            if (activity != null) {
+                activity.runOnUiThread {
+                    try {
+                        // Set brightness to maximum
+                        val layoutParams = activity.window.attributes
+                        layoutParams.screenBrightness = 1.0f
+                        activity.window.attributes = layoutParams
+
+                        // Ensure FLAG_KEEP_SCREEN_ON based on user preference
+                        val prefs = reactApplicationContext.getSharedPreferences("FreeKioskSettings", Context.MODE_PRIVATE)
+                        val keepScreenOn = prefs.getBoolean("keep_screen_on", true)
+                        if (keepScreenOn) {
+                            activity.window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                        }
+
+                        // Release the sleep wake lock
+                        wakeLock?.let { if (it.isHeld) it.release() }
+                        wakeLock = null
+
+                        android.util.Log.d("KioskModule", "Screen restored from scheduled sleep (brightness=1.0)")
+                        promise.resolve(true)
+                    } catch (e: Exception) {
+                        android.util.Log.e("KioskModule", "Failed to restore screen: ${e.message}")
+                        promise.reject("ERROR", "Failed to restore screen: ${e.message}")
+                    }
+                }
+            } else {
+                promise.reject("ERROR", "Activity not available")
+            }
+        } catch (e: Exception) {
+            promise.reject("ERROR", "Failed to restore screen: ${e.message}")
+        }
+    }
+
+    /**
      * Check if screen is currently ON or OFF
      * Returns true if screen is interactive (on), false if off
      */

@@ -25,6 +25,8 @@ interface KioskModuleInterface {
   // Screen control
   turnScreenOn(): Promise<boolean>;
   turnScreenOff(): Promise<boolean>;
+  dimScreenForScheduledSleep(): Promise<boolean>;
+  restoreScreenFromScheduledSleep(): Promise<boolean>;
   isScreenOn(): Promise<boolean>;
   setKeepScreenOn(enabled: boolean): Promise<boolean>;
   setAutoWakeOnScreenOff(enabled: boolean): Promise<boolean>;

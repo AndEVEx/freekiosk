@@ -1509,7 +1509,7 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
 
   // Helper: enter scheduled sleep mode
   const enterScheduledSleep = useCallback(async (activeRule?: ScreenScheduleRule) => {
-    console.log('[ScreenScheduler] Entering scheduled sleep');
+    console.log('[ScreenScheduler] Entering scheduled sleep — dimming screen');
     clearTimer();
     setIsScheduledSleep(true);
     isScheduledSleepRef.current = true;
@@ -1521,10 +1521,11 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
         await AutoBrightnessModule.stopAutoBrightness();
       }
       await scheduleNativeWakeAlarm(activeRule);
-      await KioskModule.turnScreenOff();
-      console.log('[ScreenScheduler] Screen turned OFF via native module');
+      // Use dim instead of turnScreenOff — keeps app in RAM, JS timers alive
+      await KioskModule.dimScreenForScheduledSleep();
+      console.log('[ScreenScheduler] Screen dimmed for scheduled sleep (app stays in RAM)');
     } catch (error) {
-      console.warn('[ScreenScheduler] Native screen off failed, using brightness fallback:', error);
+      console.warn('[ScreenScheduler] Dim failed, using brightness fallback:', error);
       if (brightnessManagementRef.current) {
         try {
           await RNBrightness.setBrightnessLevel(0);
@@ -1538,7 +1539,7 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
 
   // Helper: exit scheduled sleep mode
   const exitScheduledSleep = useCallback(async () => {
-    console.log('[ScreenScheduler] Exiting scheduled sleep - waking screen');
+    console.log('[ScreenScheduler] Exiting scheduled sleep — restoring brightness');
     setIsScheduledSleep(false);
     isScheduledSleepRef.current = false;
     ApiService.updateStatus({ scheduledSleep: false });
@@ -1546,12 +1547,10 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
     resetTimer();
 
     try {
-      await KioskModule.turnScreenOn();
-      console.log('[ScreenScheduler] Screen turned ON via native module');
-      if (displayMode === 'webview' && webViewRef.current) {
-        console.log('[ScreenScheduler] Refreshing WebView on wake from sleep');
-        webViewRef.current.reload();
-      }
+      // Restore screen from dim — sets brightness to max, releases wake lock
+      await KioskModule.restoreScreenFromScheduledSleep();
+      console.log('[ScreenScheduler] Screen restored from scheduled sleep');
+      // NO WebView reload needed — the app never left foreground, WebView is intact
       if (brightnessManagementRef.current) {
         if (autoBrightnessEnabled) {
           await AutoBrightnessModule.startAutoBrightness(autoBrightnessMin, autoBrightnessMax, autoBrightnessInterval, autoBrightnessOffset);
@@ -1560,7 +1559,11 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
         }
       }
     } catch (error) {
-      console.error('[ScreenScheduler] Error waking screen:', error);
+      console.error('[ScreenScheduler] Error restoring screen:', error);
+      // Fallback: try turnScreenOn + set brightness
+      try {
+        await KioskModule.turnScreenOn();
+      } catch (e) { /* ignore */ }
       if (brightnessManagementRef.current) {
         try {
           await RNBrightness.setBrightnessLevel(defaultBrightness);
