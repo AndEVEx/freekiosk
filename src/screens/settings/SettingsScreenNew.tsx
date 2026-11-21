@@ -192,6 +192,7 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation, route })
   const [screenSchedulerRules, setScreenSchedulerRules] = useState<ScreenScheduleRule[]>([]);
   const [dailySchedules, setDailySchedules] = useState<DaySchedule[]>(DEFAULT_DAY_SCHEDULES);
   const [screenSchedulerWakeOnTouch, setScreenSchedulerWakeOnTouch] = useState<boolean>(true);
+  const [screenSchedulerSleepMode, setScreenSchedulerSleepMode] = useState<'dim' | 'turn_off'>('dim');
   const [keepScreenOn, setKeepScreenOn] = useState<boolean>(true);
   const [autoWakeOnScreenOff, setAutoWakeOnScreenOff] = useState<boolean>(false);
   const [showScheduleRuleEditor, setShowScheduleRuleEditor] = useState<boolean>(false);
@@ -634,6 +635,7 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation, route })
     const savedScreenSchedulerRules = await StorageService.getScreenSchedulerRules();
     const savedDailySchedules = await StorageService.getScreenSchedulerDailySchedules();
     const savedScreenSchedulerWakeOnTouch = await StorageService.getScreenSchedulerWakeOnTouch();
+    const savedScreenSchedulerSleepMode = await StorageService.getScreenSchedulerSleepMode();
     const savedKeepScreenOn = await StorageService.getKeepScreenOn();
 
     setDisplayMode(savedDisplayMode);
@@ -699,6 +701,7 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation, route })
     setScreenSchedulerRules(savedScreenSchedulerRules);
     setDailySchedules(savedDailySchedules);
     setScreenSchedulerWakeOnTouch(savedScreenSchedulerWakeOnTouch);
+    setScreenSchedulerSleepMode(savedScreenSchedulerSleepMode);
     setKeepScreenOn(savedKeepScreenOn);
 
     const savedAutoWakeOnScreenOff = await StorageService.getAutoWakeOnScreenOff();
@@ -1552,6 +1555,10 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation, route })
     await StorageService.saveScreenSchedulerRules(screenSchedulerRules);
     await StorageService.saveScreenSchedulerDailySchedules(dailySchedules);
     await StorageService.saveScreenSchedulerWakeOnTouch(screenSchedulerWakeOnTouch);
+    await StorageService.saveScreenSchedulerSleepMode(screenSchedulerSleepMode);
+    try {
+      await KioskModule.setScreenSchedulerSleepMode(screenSchedulerSleepMode);
+    } catch (e) { /* ignore */ }
 
     // Screensaver settings apply to all display modes (external_app now supports screensaver)
     await StorageService.saveScreensaverEnabled(screensaverEnabled);
@@ -2283,6 +2290,12 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation, route })
             onScreenSchedulerRulesChange={setScreenSchedulerRules}
             screenSchedulerWakeOnTouch={screenSchedulerWakeOnTouch}
             onScreenSchedulerWakeOnTouchChange={setScreenSchedulerWakeOnTouch}
+            screenSchedulerSleepMode={screenSchedulerSleepMode}
+            onScreenSchedulerSleepModeChange={(mode) => {
+              setScreenSchedulerSleepMode(mode);
+              StorageService.saveScreenSchedulerSleepMode(mode).catch(() => {});
+              KioskModule.setScreenSchedulerSleepMode(mode).catch(() => {});
+            }}
             keepScreenOn={keepScreenOn}
             onKeepScreenOnChange={(value) => {
               setKeepScreenOn(value);

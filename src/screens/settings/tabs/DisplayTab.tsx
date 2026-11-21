@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { View, StyleSheet, Text } from 'react-native';
+import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import {
   SettingsSection,
   SettingsSwitch,
@@ -109,6 +109,8 @@ export interface DisplayTabProps {
   onDailySchedulesChange?: (schedules: DaySchedule[]) => void;
   screenSchedulerWakeOnTouch: boolean;
   onScreenSchedulerWakeOnTouchChange: (value: boolean) => void;
+  screenSchedulerSleepMode?: 'dim' | 'turn_off';
+  onScreenSchedulerSleepModeChange?: (mode: 'dim' | 'turn_off') => void;
   onAddScheduleRule?: () => void;
   onEditScheduleRule?: (rule: ScreenScheduleRule) => void;
   
@@ -128,6 +130,8 @@ const DisplayTab: React.FC<DisplayTabProps> = ({
   onDailySchedulesChange = () => {},
   screenSchedulerWakeOnTouch,
   onScreenSchedulerWakeOnTouchChange,
+  screenSchedulerSleepMode = 'dim',
+  onScreenSchedulerSleepModeChange = () => {},
   keepScreenOn = true,
   onKeepScreenOnChange = () => {},
   autoWakeOnScreenOff = false,
@@ -164,6 +168,52 @@ const DisplayTab: React.FC<DisplayTabProps> = ({
                 value={screenSchedulerWakeOnTouch}
                 onValueChange={onScreenSchedulerWakeOnTouchChange}
               />
+            </View>
+
+            <View style={styles.subSection}>
+              <Text style={styles.subSectionTitle}>Mode Saat Jadwal Mati</Text>
+              <Text style={styles.subSectionSubtitle}>
+                Pilih apakah layar hanya diredupkan (anti-lockscreen) atau dimatikan total secara fisik.
+              </Text>
+              <View style={{ flexDirection: 'row', gap: Spacing.sm, marginTop: Spacing.xs }}>
+                <TouchableOpacity
+                  style={[
+                    styles.modeChoiceBtn,
+                    screenSchedulerSleepMode === 'dim' && styles.modeChoiceBtnActive
+                  ]}
+                  onPress={() => onScreenSchedulerSleepModeChange('dim')}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[
+                    styles.modeChoiceTitle,
+                    screenSchedulerSleepMode === 'dim' && styles.modeChoiceTitleActive
+                  ]}>
+                    ✓ Redupkan Layar (Dim 0%)
+                  </Text>
+                  <Text style={styles.modeChoiceDesc}>
+                    Kecerahan 0%, layar hitam tapi app tetap aktif di RAM. Aman dari lockscreen & langsung nyala tanpa reload.
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.modeChoiceBtn,
+                    screenSchedulerSleepMode === 'turn_off' && styles.modeChoiceBtnActive
+                  ]}
+                  onPress={() => onScreenSchedulerSleepModeChange('turn_off')}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[
+                    styles.modeChoiceTitle,
+                    screenSchedulerSleepMode === 'turn_off' && styles.modeChoiceTitleActive
+                  ]}>
+                    ✓ Matikan Layar Total
+                  </Text>
+                  <Text style={styles.modeChoiceDesc}>
+                    Layar & lampu backlight padam total (hemat daya IPS). Dibangunkan otomatis oleh alarm wake saat jadwal nyala.
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </>
         )}
@@ -232,6 +282,34 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: Colors.textPrimary,
     marginBottom: Spacing.xs,
+  },
+  modeChoiceBtn: {
+    flex: 1,
+    padding: Spacing.md,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+    backgroundColor: Colors.cardBackground,
+  },
+  modeChoiceBtnActive: {
+    borderColor: Colors.primary,
+    backgroundColor: '#f0f6ff',
+  },
+  modeChoiceTitle: {
+    ...Typography.subtitle,
+    fontSize: 13,
+    fontWeight: '700',
+    color: Colors.textSecondary,
+    marginBottom: 4,
+  },
+  modeChoiceTitleActive: {
+    color: Colors.primary,
+  },
+  modeChoiceDesc: {
+    ...Typography.caption,
+    fontSize: 11,
+    color: Colors.textSecondary,
+    lineHeight: 15,
   },
   subSectionSubtitle: {
     ...Typography.caption,

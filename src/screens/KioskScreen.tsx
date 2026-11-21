@@ -172,6 +172,8 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
   const [screenSchedulerRules, setScreenSchedulerRules] = useState<ScreenScheduleRule[]>([]);
   const [screenSchedulerDailySchedules, setScreenSchedulerDailySchedules] = useState<DaySchedule[]>(DEFAULT_DAY_SCHEDULES);
   const [screenSchedulerWakeOnTouch, setScreenSchedulerWakeOnTouch] = useState<boolean>(true);
+  const [screenSchedulerSleepMode, setScreenSchedulerSleepMode] = useState<'dim' | 'turn_off'>('dim');
+  const screenSchedulerSleepModeRef = useRef<'dim' | 'turn_off'>('dim');
   const [isScheduledSleep, setIsScheduledSleep] = useState<boolean>(false); // true when screen is OFF due to scheduler
   const isScheduledSleepRef = useRef<boolean>(false);
   const screenSchedulerTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -1521,9 +1523,14 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
         await AutoBrightnessModule.stopAutoBrightness();
       }
       await scheduleNativeWakeAlarm(activeRule);
-      // Use dim instead of turnScreenOff — keeps app in RAM, JS timers alive
-      await KioskModule.dimScreenForScheduledSleep();
-      console.log('[ScreenScheduler] Screen dimmed for scheduled sleep (app stays in RAM)');
+      if (screenSchedulerSleepModeRef.current === 'turn_off') {
+        console.log('[ScreenScheduler] Turning screen OFF physically via native turnScreenOff');
+        await KioskModule.turnScreenOff();
+      } else {
+        // Use dim instead of turnScreenOff — keeps app in RAM, JS timers alive
+        await KioskModule.dimScreenForScheduledSleep();
+        console.log('[ScreenScheduler] Screen dimmed for scheduled sleep (app stays in RAM)');
+      }
     } catch (error) {
       console.warn('[ScreenScheduler] Dim failed, using brightness fallback:', error);
       if (brightnessManagementRef.current) {
@@ -1547,9 +1554,14 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
     resetTimer();
 
     try {
-      // Restore screen from dim — sets brightness to max, releases wake lock
-      await KioskModule.restoreScreenFromScheduledSleep();
-      console.log('[ScreenScheduler] Screen restored from scheduled sleep');
+      if (screenSchedulerSleepModeRef.current === 'turn_off') {
+        console.log('[ScreenScheduler] Screen waking from physical screen off via turnScreenOn');
+        await KioskModule.turnScreenOn();
+      } else {
+        // Restore screen from dim — sets brightness to max, releases wake lock
+        await KioskModule.restoreScreenFromScheduledSleep();
+        console.log('[ScreenScheduler] Screen restored from scheduled sleep');
+      }
       // NO WebView reload needed — the app never left foreground, WebView is intact
       if (brightnessManagementRef.current) {
         if (autoBrightnessEnabled) {
@@ -2038,6 +2050,10 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
       const savedScreenSchedulerEnabled = bool(K.SCREEN_SCHEDULER_ENABLED, false);
       const savedScreenSchedulerRules = jsonParse(K.SCREEN_SCHEDULER_RULES, []) as ScreenScheduleRule[];
       const savedScreenSchedulerWakeOnTouch = bool(K.SCREEN_SCHEDULER_WAKE_ON_TOUCH, true);
+      const savedSleepMode = (str(K.SCREEN_SCHEDULER_SLEEP_MODE) === 'turn_off' ? 'turn_off' : 'dim') as 'dim' | 'turn_off';
+      setScreenSchedulerSleepMode(savedSleepMode);
+      screenSchedulerSleepModeRef.current = savedSleepMode;
+      KioskModule.setScreenSchedulerSleepMode(savedSleepMode).catch(() => {});
       setScreenSchedulerEnabled(savedScreenSchedulerEnabled);
       setScreenSchedulerRules(savedScreenSchedulerRules);
       const savedScreenSchedulerDailySchedules = jsonParse(K.SCREEN_SCHEDULER_DAILY_SCHEDULES, DEFAULT_DAY_SCHEDULES) as DaySchedule[];

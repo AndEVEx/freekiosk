@@ -57,9 +57,23 @@ class ScreenSchedulerReceiver : BroadcastReceiver() {
             wakeLock.acquire(WAKE_LOCK_TIMEOUT)
             Log.d(TAG, "WakeLock acquired — screen should be turning on")
 
-            // 2. Explicitly launch or bring MainActivity to foreground
+            // 2. High-importance full-screen-intent notification + launch MainActivity
+            // Modern Android (10, 11, 12, 13, 14+) uses fullScreenIntent (the incoming-call/alarm pattern)
+            // to wake the display and immediately present the activity over the lock screen without user interaction.
             try {
-                val launchIntent = Intent(context, MainActivity::class.java).apply {
+                val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
+                val channelId = "freekiosk_wake"
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    val channel = android.app.NotificationChannel(
+                        channelId, "Screen wake", android.app.NotificationManager.IMPORTANCE_HIGH
+                    ).apply {
+                        setSound(null, null)
+                        enableVibration(false)
+                        lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
+                    }
+                    nm.createNotificationChannel(channel)
+                }
+                val fsIntent = Intent(context, MainActivity::class.java).apply {
                     addFlags(
                         Intent.FLAG_ACTIVITY_NEW_TASK or
                         Intent.FLAG_ACTIVITY_SINGLE_TOP or
@@ -67,8 +81,26 @@ class ScreenSchedulerReceiver : BroadcastReceiver() {
                     )
                     putExtra("from_screen_scheduler_wake", true)
                 }
-                context.startActivity(launchIntent)
-                Log.d(TAG, "MainActivity startActivity called for scheduled wake")
+                val piFlags = android.app.PendingIntent.FLAG_UPDATE_CURRENT or
+                    (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) android.app.PendingIntent.FLAG_IMMUTABLE else 0)
+                val pi = android.app.PendingIntent.getActivity(context, 0, fsIntent, piFlags)
+                val builder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+                    android.app.Notification.Builder(context, channelId)
+                else @Suppress("DEPRECATION") android.app.Notification.Builder(context)
+                val notif = builder
+                    .setSmallIcon(R.mipmap.ic_launcher)
+                    .setContentTitle("FreeKiosk")
+                    .setContentText("Waking screen")
+                    .setCategory(android.app.Notification.CATEGORY_ALARM)
+                    .setFullScreenIntent(pi, true)
+                    .setAutoCancel(true)
+                    .build()
+                nm.notify(0xF00D, notif)
+                context.startActivity(fsIntent)
+                android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                    try { nm.cancel(0xF00D) } catch (_: Exception) {}
+                }, 3000)
+                Log.d(TAG, "MainActivity launched via FullScreenIntent + startActivity for scheduled wake")
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to start MainActivity on scheduled wake: ${e.message}", e)
             }
@@ -76,9 +108,6 @@ class ScreenSchedulerReceiver : BroadcastReceiver() {
             // 3. Dismiss keyguard / show over lock screen on the activity
             //    This is needed if the user has a PIN/pattern lock.
             try {
-                val app = context.applicationContext as? android.app.Application
-                val activityClass = Class.forName("com.freekiosk.MainActivity")
-                // Try to get the current activity via React Native's context
                 val reactApp = context.applicationContext
                 if (reactApp is com.facebook.react.ReactApplication) {
                     val reactHost = reactApp.reactNativeHost
@@ -110,11 +139,13 @@ class ScreenSchedulerReceiver : BroadcastReceiver() {
                                     activity.window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                                 }
 
-                                // #242: restore the requested brightness, not the system
-                                // default. Screen Scheduler wake goes through here.
+                                // Set brightness to 1.0 (Maximum) on wake
+                                val layoutParams = activity.window.attributes
+                                layoutParams.screenBrightness = 1.0f
+                                activity.window.attributes = layoutParams
                                 BrightnessPrefs.applyToWindow(context, activity.window)
 
-                                Log.d(TAG, "Activity flags restored: KEEP_SCREEN_ON, brightness, keyguard dismissed")
+                                Log.d(TAG, "Activity flags restored: KEEP_SCREEN_ON, brightness 1.0, keyguard dismissed")
                             } catch (e: Exception) {
                                 Log.e(TAG, "Failed to set activity flags: ${e.message}")
                             }
@@ -137,8 +168,12 @@ class ScreenSchedulerReceiver : BroadcastReceiver() {
     }
 
     private fun handleSleep(context: Context) {
-        Log.d(TAG, "⏰ Scheduled SLEEP alarm fired — dimming screen")
+        Log.d(TAG, "⏰ Scheduled SLEEP alarm fired")
         try {
+            val prefs = context.getSharedPreferences("FreeKioskSettings", Context.MODE_PRIVATE)
+            val sleepMode = prefs.getString("screen_scheduler_sleep_mode", "dim") ?: "dim"
+            Log.d(TAG, "Sleep mode configured: $sleepMode")
+
             // Dismiss soft keyboard if open
             try {
                 val reactApp = context.applicationContext
@@ -146,22 +181,37 @@ class ScreenSchedulerReceiver : BroadcastReceiver() {
                     val activity = reactApp.reactNativeHost.reactInstanceManager?.currentReactContext?.currentActivity
                     if (activity != null) {
                         KeyboardUtils.dismiss(activity)
-                        // Dim the screen instead of locking — keeps app in foreground/RAM
-                        activity.runOnUiThread {
+                        if (sleepMode == "turn_off") {
+                            // Physical screen off via Device Owner or Admin
                             try {
-                                val layoutParams = activity.window.attributes
-                                layoutParams.screenBrightness = 0.001f
-                                activity.window.attributes = layoutParams
-                                activity.window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-                                Log.d(TAG, "Screen dimmed to near-zero in receiver (app stays in RAM)")
+                                val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as? android.app.admin.DevicePolicyManager
+                                val adminComponent = android.content.ComponentName(context, DeviceAdminReceiver::class.java)
+                                if (dpm != null && (dpm.isDeviceOwnerApp(context.packageName) || dpm.isAdminActive(adminComponent))) {
+                                    ScreenStateReceiver.markDeliberateScreenOff(context)
+                                    dpm.lockNow()
+                                    Log.d(TAG, "Screen turned OFF via lockNow() in receiver")
+                                }
                             } catch (e: Exception) {
-                                Log.w(TAG, "Could not dim screen: ${e.message}")
+                                Log.w(TAG, "Could not lock screen directly: ${e.message}")
+                            }
+                        } else {
+                            // Dim the screen instead of locking — keeps app in foreground/RAM
+                            activity.runOnUiThread {
+                                try {
+                                    val layoutParams = activity.window.attributes
+                                    layoutParams.screenBrightness = 0.001f
+                                    activity.window.attributes = layoutParams
+                                    activity.window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                                    Log.d(TAG, "Screen dimmed to near-zero in receiver (app stays in RAM)")
+                                } catch (e: Exception) {
+                                    Log.w(TAG, "Could not dim screen: ${e.message}")
+                                }
                             }
                         }
                     }
                 }
             } catch (e: Exception) {
-                Log.w(TAG, "Could not dismiss keyboard / dim screen: ${e.message}")
+                Log.w(TAG, "Could not dismiss keyboard / handle sleep: ${e.message}")
             }
 
             // Send event to JS so the app can handle the sleep properly

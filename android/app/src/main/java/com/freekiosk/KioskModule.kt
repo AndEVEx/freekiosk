@@ -1416,6 +1416,23 @@ class KioskModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
     }
 
     /**
+     * Set the screen scheduler sleep mode:
+     * "dim" (default): dim brightness to 0.001, keep app in foreground, zero risk of lock screen.
+     * "turn_off": physical screen off via Device Owner/Admin lockNow(), saves maximum power.
+     */
+    @ReactMethod
+    fun setScreenSchedulerSleepMode(mode: String, promise: Promise) {
+        try {
+            val prefs = reactApplicationContext.getSharedPreferences("FreeKioskSettings", Context.MODE_PRIVATE)
+            prefs.edit().putString("screen_scheduler_sleep_mode", mode).apply()
+            android.util.Log.d("KioskModule", "Screen scheduler sleep mode set: $mode")
+            promise.resolve(true)
+        } catch (e: Exception) {
+            promise.reject("ERROR", "Failed to set sleep mode: ${e.message}")
+        }
+    }
+
+    /**
      * Save PIN hash for ADB verification
      * Called when PIN is set via React Native UI to keep ADB config in sync
      */

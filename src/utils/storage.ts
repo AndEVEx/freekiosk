@@ -124,6 +124,7 @@ export const KEYS = {
   SCREEN_SCHEDULER_RULES: '@kiosk_screen_scheduler_rules',
   SCREEN_SCHEDULER_DAILY_SCHEDULES: '@kiosk_screen_scheduler_daily_schedules',
   SCREEN_SCHEDULER_WAKE_ON_TOUCH: '@kiosk_screen_scheduler_wake_on_touch',
+  SCREEN_SCHEDULER_SLEEP_MODE: '@kiosk_screen_scheduler_sleep_mode',
   // Keep Screen On (FLAG_KEEP_SCREEN_ON)
   KEEP_SCREEN_ON: '@kiosk_keep_screen_on',
   // Auto Wake on Screen Off
@@ -615,6 +616,7 @@ export const StorageService = {
         KEYS.SCREEN_SCHEDULER_ENABLED,
         KEYS.SCREEN_SCHEDULER_RULES,
         KEYS.SCREEN_SCHEDULER_WAKE_ON_TOUCH,
+        KEYS.SCREEN_SCHEDULER_SLEEP_MODE,
         // Keep Screen On
         KEYS.KEEP_SCREEN_ON,
         // Auto Wake on Screen Off
@@ -2362,6 +2364,24 @@ export const StorageService = {
     }
   },
 
+  saveScreenSchedulerSleepMode: async (mode: 'dim' | 'turn_off'): Promise<void> => {
+    try {
+      await AsyncStorage.setItem(KEYS.SCREEN_SCHEDULER_SLEEP_MODE, mode);
+    } catch (error) {
+      console.error('Error saving screen scheduler sleep mode:', error);
+    }
+  },
+
+  getScreenSchedulerSleepMode: async (): Promise<'dim' | 'turn_off'> => {
+    try {
+      const value = await AsyncStorage.getItem(KEYS.SCREEN_SCHEDULER_SLEEP_MODE);
+      return (value === 'turn_off' ? 'turn_off' : 'dim');
+    } catch (error) {
+      console.error('Error getting screen scheduler sleep mode:', error);
+      return 'dim';
+    }
+  },
+
   // ============ KEEP SCREEN ON (FLAG_KEEP_SCREEN_ON) ============
 
   saveKeepScreenOn: async (value: boolean): Promise<void> => {
@@ -3840,6 +3860,7 @@ export const StorageService = {
           rules: json(KEYS.SCREEN_SCHEDULER_RULES, []),
           dailySchedules: json(KEYS.SCREEN_SCHEDULER_DAILY_SCHEDULES, DEFAULT_DAY_SCHEDULES),
           wakeOnTouch: bool(KEYS.SCREEN_SCHEDULER_WAKE_ON_TOUCH, true),
+sleepMode: (str(KEYS.SCREEN_SCHEDULER_SLEEP_MODE) === 'turn_off' ? 'turn_off' : 'dim') as 'dim' | 'turn_off',
         },
         keepScreenOn: bool(KEYS.KEEP_SCREEN_ON, true),
         autoWakeOnScreenOff: bool(KEYS.AUTO_WAKE_ON_SCREEN_OFF),
@@ -4110,6 +4131,7 @@ export const StorageService = {
           set(KEYS.SCREEN_SCHEDULER_DAILY_SCHEDULES, sch.dailySchedules);
         }
         set(KEYS.SCREEN_SCHEDULER_WAKE_ON_TOUCH, sch.wakeOnTouch);
+if (sch.sleepMode) set(KEYS.SCREEN_SCHEDULER_SLEEP_MODE, sch.sleepMode);
       }
       set(KEYS.KEEP_SCREEN_ON, d.keepScreenOn);
       set(KEYS.AUTO_WAKE_ON_SCREEN_OFF, d.autoWakeOnScreenOff);
