@@ -1278,14 +1278,13 @@ class KioskModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
                         activity.window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
                         // Acquire a PARTIAL_WAKE_LOCK to keep CPU alive during scheduled sleep
-                        if (wakeLock?.isHeld != true) {
-                            val powerManager = reactApplicationContext.getSystemService(Context.POWER_SERVICE) as PowerManager
-                            wakeLock = powerManager.newWakeLock(
-                                PowerManager.PARTIAL_WAKE_LOCK,
-                                "FreeKiosk:ScheduledSleepCPU"
-                            )
-                            wakeLock?.acquire(12 * 60 * 60 * 1000L) // 12 hours max
-                        }
+                        wakeLock?.let { if (it.isHeld) it.release() }
+                        val powerManager = reactApplicationContext.getSystemService(Context.POWER_SERVICE) as PowerManager
+                        wakeLock = powerManager.newWakeLock(
+                            PowerManager.PARTIAL_WAKE_LOCK,
+                            "FreeKiosk:ScheduledSleepCPU"
+                        ).apply { setReferenceCounted(false) }
+                        wakeLock?.acquire(12 * 60 * 60 * 1000L) // 12 hours max
 
                         android.util.Log.d("KioskModule", "Screen dimmed for scheduled sleep (brightness=0.001, keepScreenOn=true, wakeLock=acquired)")
                         promise.resolve(true)

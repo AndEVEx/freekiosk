@@ -1555,18 +1555,19 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
         if (autoBrightnessEnabled) {
           await AutoBrightnessModule.startAutoBrightness(autoBrightnessMin, autoBrightnessMax, autoBrightnessInterval, autoBrightnessOffset);
         } else {
-          await RNBrightness.setBrightnessLevel(defaultBrightness);
+          // Set to maximum brightness on scheduled wake as requested
+          await RNBrightness.setBrightnessLevel(1.0);
         }
       }
     } catch (error) {
       console.error('[ScreenScheduler] Error restoring screen:', error);
-      // Fallback: try turnScreenOn + set brightness
+      // Fallback: try turnScreenOn + set brightness to max
       try {
         await KioskModule.turnScreenOn();
       } catch (e) { /* ignore */ }
       if (brightnessManagementRef.current) {
         try {
-          await RNBrightness.setBrightnessLevel(defaultBrightness);
+          await RNBrightness.setBrightnessLevel(1.0);
         } catch (e) {
           console.error('[ScreenScheduler] Brightness restore also failed:', e);
         }

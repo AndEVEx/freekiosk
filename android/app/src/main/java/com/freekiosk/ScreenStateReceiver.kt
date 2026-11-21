@@ -190,7 +190,20 @@ class ScreenStateReceiver : BroadcastReceiver() {
                             }
                         }
                     } else {
-                        Log.w(TAG, "Auto-wake: no current activity — WakeLock alone will handle wake")
+                        Log.w(TAG, "Auto-wake: no current activity — launching MainActivity")
+                        try {
+                            val launchIntent = Intent(context, MainActivity::class.java).apply {
+                                addFlags(
+                                    Intent.FLAG_ACTIVITY_NEW_TASK or
+                                    Intent.FLAG_ACTIVITY_SINGLE_TOP or
+                                    Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                                )
+                                putExtra("from_auto_wake", true)
+                            }
+                            context.startActivity(launchIntent)
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Failed to launch MainActivity on auto-wake: ${e.message}")
+                        }
                     }
                 }
             } catch (e: Exception) {
